@@ -5,6 +5,7 @@ import type {
   ResolveIntentOptions,
   SdkBuilderBootstrapResponse,
   SdkBuilderCloseResponse,
+  SdkBuilderDeleteResponse,
   SdkBuilderHeartbeatResponse,
   SdkBuilderSelectOptions,
   SdkBuilderSelectResponse,
@@ -112,6 +113,14 @@ export class GuidoraApiClient {
     return this.post<SdkBuilderCloseResponse>("sdk/builder/close/", {
       session_token: payload.sessionToken,
       domain: normalizeDomain(payload.domain ?? this.config.domain),
+    });
+  }
+
+  async builderDeleteStep(payload: { sessionToken: string; domain?: string; stepId: number }) {
+    return this.post<SdkBuilderDeleteResponse>("sdk/builder/delete-step/", {
+      session_token: payload.sessionToken,
+      domain: normalizeDomain(payload.domain ?? this.config.domain),
+      step_id: payload.stepId,
     });
   }
 

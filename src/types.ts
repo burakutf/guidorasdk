@@ -187,6 +187,12 @@ export interface SdkBuilderSelectResponse {
   next_step_order: number;
 }
 
+export interface SdkBuilderDeleteResponse {
+  deleted: boolean;
+  steps: SdkFlowStep[];
+  next_step_order: number;
+}
+
 export interface SdkBuilderCloseResponse {
   active: boolean;
 }
