@@ -4,7 +4,13 @@ export interface JsonRecord {
 
 export interface JsonArray extends Array<JsonValue> {}
 
-export type JsonValue = string | number | boolean | null | JsonRecord | JsonArray;
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonRecord
+  | JsonArray;
 
 export type GuideEventType =
   | "page_view"
@@ -16,7 +22,13 @@ export type GuideEventType =
   | "ai_query"
   | "flow_suggested";
 
-export type TooltipPosition = "top" | "right" | "bottom" | "left" | "center" | string;
+export type TooltipPosition =
+  | "top"
+  | "right"
+  | "bottom"
+  | "left"
+  | "center"
+  | string;
 export type AdvanceMode = "next_click" | "target_click" | "auto" | string;
 
 export interface GuidoraConfig {
@@ -199,8 +211,14 @@ export interface SdkBuilderCloseResponse {
 
 export interface GuidoraClient {
   bootstrap(options?: BootstrapOptions): Promise<SdkBootstrapResponse>;
-  resolveIntent(question: string, options?: ResolveIntentOptions): Promise<SdkResolveIntentResponse>;
-  track(eventType: GuideEventType, options?: TrackEventOptions): Promise<SdkEventResponse>;
+  resolveIntent(
+    question: string,
+    options?: ResolveIntentOptions,
+  ): Promise<SdkResolveIntentResponse>;
+  track(
+    eventType: GuideEventType,
+    options?: TrackEventOptions,
+  ): Promise<SdkEventResponse>;
   destroy(): void;
   getAnonymousId(): string;
   getSessionKey(): string;

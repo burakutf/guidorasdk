@@ -56,7 +56,9 @@ function nthOfTypeSelector(element: HTMLElement) {
     return element.tagName.toLowerCase();
   }
 
-  const siblings = Array.from(parent.children).filter((child) => child.tagName === element.tagName);
+  const siblings = Array.from(parent.children).filter(
+    (child) => child.tagName === element.tagName,
+  );
   const index = siblings.indexOf(element) + 1;
   const tagName = element.tagName.toLowerCase();
 
@@ -71,7 +73,11 @@ function hierarchicalSelector(element: HTMLElement) {
   const parts: string[] = [];
   let current: HTMLElement | null = element;
 
-  while (current && current !== document.body && current !== document.documentElement) {
+  while (
+    current &&
+    current !== document.body &&
+    current !== document.documentElement
+  ) {
     const uniqueAttributeSelector =
       attributeSelector(current, "data-guidora") ||
       attributeSelector(current, "data-testid") ||
@@ -206,7 +212,11 @@ export class BuilderRuntime {
     }
 
     event.preventDefault();
-    this.setPanelPosition(event.clientX - this.dragOffset.x, event.clientY - this.dragOffset.y, true);
+    this.setPanelPosition(
+      event.clientX - this.dragOffset.x,
+      event.clientY - this.dragOffset.y,
+      true,
+    );
   };
   private boundPanelPointerUp = () => {
     if (!this.isDraggingPanel) {
@@ -214,11 +224,19 @@ export class BuilderRuntime {
     }
 
     this.isDraggingPanel = false;
-    document.removeEventListener("pointermove", this.boundPanelPointerMove, true);
+    document.removeEventListener(
+      "pointermove",
+      this.boundPanelPointerMove,
+      true,
+    );
     document.removeEventListener("pointerup", this.boundPanelPointerUp, true);
   };
 
-  constructor(api: GuidoraApiClient, zIndex = 2147483000, handleError: (error: Error) => void) {
+  constructor(
+    api: GuidoraApiClient,
+    zIndex = 2147483000,
+    handleError: (error: Error) => void,
+  ) {
     this.api = api;
     this.zIndex = zIndex;
     this.handleError = handleError;
@@ -247,21 +265,24 @@ export class BuilderRuntime {
     const steps = this.getSortedSteps();
     if (steps.length) {
       const currentPath = normalizePath(window.location.pathname);
-      const preferredStep = steps.find((step) => step.page_path === currentPath) ?? steps[0];
+      const preferredStep =
+        steps.find((step) => step.page_path === currentPath) ?? steps[0];
       this.editStep(preferredStep.id);
 
       if (preferredStep.page_path === currentPath) {
         this.setStatus(
-          `Loaded ${steps.length} saved ${steps.length === 1 ? "step" : "steps"}. You can refine this step or capture a new one.`
+          `Loaded ${steps.length} saved ${steps.length === 1 ? "step" : "steps"}. You can refine this step or capture a new one.`,
         );
       } else {
         this.setStatus(
-          `Loaded ${steps.length} saved ${steps.length === 1 ? "step" : "steps"}. You are viewing step ${preferredStep.step_order} from ${preferredStep.page_path}.`
+          `Loaded ${steps.length} saved ${steps.length === 1 ? "step" : "steps"}. You are viewing step ${preferredStep.step_order} from ${preferredStep.page_path}.`,
         );
       }
     } else {
       this.startNewStep({ autoCapture: true, announce: false });
-      this.setStatus("Click any product element to capture a selector, or choose an existing step to edit.");
+      this.setStatus(
+        "Click any product element to capture a selector, or choose an existing step to edit.",
+      );
     }
 
     this.startHeartbeat();
@@ -290,7 +311,9 @@ export class BuilderRuntime {
     this.updateSessionMeta();
     this.refreshPreview();
     this.renderStepList();
-    this.setStatus("Builder mode is still active. You can capture a new step here or keep editing an existing one.");
+    this.setStatus(
+      "Builder mode is still active. You can capture a new step here or keep editing an existing one.",
+    );
   }
 
   destroy() {
@@ -316,10 +339,12 @@ export class BuilderRuntime {
     root.setAttribute("data-guidora-builder-root", "true");
 
     const highlight = document.createElement("div");
-    highlight.className = "guidora-sdk-builder-highlight guidora-sdk-builder-hidden";
+    highlight.className =
+      "guidora-sdk-builder-highlight guidora-sdk-builder-hidden";
 
     const panel = document.createElement("div");
-    panel.className = "guidora-sdk-builder-panel guidora-sdk-builder-panel-left";
+    panel.className =
+      "guidora-sdk-builder-panel guidora-sdk-builder-panel-left";
 
     const chrome = document.createElement("div");
     chrome.className = "guidora-sdk-builder-chrome";
@@ -356,7 +381,8 @@ export class BuilderRuntime {
 
     const closeButton = document.createElement("button");
     closeButton.type = "button";
-    closeButton.className = "guidora-sdk-builder-utility-button guidora-sdk-builder-utility-button-close";
+    closeButton.className =
+      "guidora-sdk-builder-utility-button guidora-sdk-builder-utility-button-close";
     closeButton.textContent = "Finish";
     closeButton.addEventListener("click", () => {
       void this.close();
@@ -374,7 +400,8 @@ export class BuilderRuntime {
 
     const copy = document.createElement("p");
     copy.className = "guidora-sdk-builder-copy";
-    copy.textContent = "See existing steps, edit their copy, recapture selectors, or add a new step from the live product page.";
+    copy.textContent =
+      "See existing steps, edit their copy, recapture selectors, or add a new step from the live product page.";
 
     const meta = document.createElement("div");
     meta.className = "guidora-sdk-builder-meta";
@@ -463,7 +490,13 @@ export class BuilderRuntime {
     advanceField.field.append(advanceSelect);
 
     grid.append(positionField.field, advanceField.field);
-    formSection.append(formHeader, pagePathField.field, titleField.field, bodyField.field, grid);
+    formSection.append(
+      formHeader,
+      pagePathField.field,
+      titleField.field,
+      bodyField.field,
+      grid,
+    );
 
     const statusValue = document.createElement("div");
     statusValue.className = "guidora-sdk-builder-status";
@@ -474,7 +507,8 @@ export class BuilderRuntime {
 
     const captureButton = document.createElement("button");
     captureButton.type = "button";
-    captureButton.className = "guidora-sdk-builder-button guidora-sdk-builder-button-secondary";
+    captureButton.className =
+      "guidora-sdk-builder-button guidora-sdk-builder-button-secondary";
     captureButton.textContent = "Capture element";
     captureButton.addEventListener("click", () => {
       this.startPicking();
@@ -482,7 +516,8 @@ export class BuilderRuntime {
 
     const newStepButton = document.createElement("button");
     newStepButton.type = "button";
-    newStepButton.className = "guidora-sdk-builder-button guidora-sdk-builder-button-ghost";
+    newStepButton.className =
+      "guidora-sdk-builder-button guidora-sdk-builder-button-ghost";
     newStepButton.textContent = "New step";
     newStepButton.addEventListener("click", () => {
       this.startNewStep({ autoCapture: false, announce: true });
@@ -490,7 +525,8 @@ export class BuilderRuntime {
 
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
-    deleteButton.className = "guidora-sdk-builder-button guidora-sdk-builder-button-danger";
+    deleteButton.className =
+      "guidora-sdk-builder-button guidora-sdk-builder-button-danger";
     deleteButton.textContent = "Delete step";
     deleteButton.addEventListener("click", () => {
       void this.deleteCurrentStep();
@@ -498,14 +534,23 @@ export class BuilderRuntime {
 
     const saveButton = document.createElement("button");
     saveButton.type = "button";
-    saveButton.className = "guidora-sdk-builder-button guidora-sdk-builder-button-primary";
+    saveButton.className =
+      "guidora-sdk-builder-button guidora-sdk-builder-button-primary";
     saveButton.textContent = "Save step";
     saveButton.addEventListener("click", () => {
       void this.saveStep();
     });
 
     actions.append(captureButton, newStepButton, deleteButton, saveButton);
-    panelBody.append(heading, copy, meta, listSection, formSection, statusValue, actions);
+    panelBody.append(
+      heading,
+      copy,
+      meta,
+      listSection,
+      formSection,
+      statusValue,
+      actions,
+    );
     panel.append(chrome, panelBody);
     root.append(highlight, panel);
     document.body.append(root);
@@ -550,8 +595,14 @@ export class BuilderRuntime {
     labelElement.textContent = label;
 
     const value = document.createElement("div");
-    value.className = label === "Selected selector" ? "guidora-sdk-builder-code" : "guidora-sdk-builder-value";
-    value.textContent = label === "Selected selector" ? "Capture an element to see its selector." : "-";
+    value.className =
+      label === "Selected selector"
+        ? "guidora-sdk-builder-code"
+        : "guidora-sdk-builder-value";
+    value.textContent =
+      label === "Selected selector"
+        ? "Capture an element to see its selector."
+        : "-";
 
     card.append(labelElement, value);
     return { card, value };
@@ -569,7 +620,11 @@ export class BuilderRuntime {
     return { field, labelElement };
   }
 
-  private appendOption(select: HTMLSelectElement, value: string, label: string) {
+  private appendOption(
+    select: HTMLSelectElement,
+    value: string,
+    label: string,
+  ) {
     const option = document.createElement("option");
     option.value = value;
     option.textContent = label;
@@ -577,11 +632,16 @@ export class BuilderRuntime {
   }
 
   private getSortedSteps() {
-    return [...(this.session?.flow.steps ?? [])].sort((left, right) => left.step_order - right.step_order);
+    return [...(this.session?.flow.steps ?? [])].sort(
+      (left, right) => left.step_order - right.step_order,
+    );
   }
 
   private getEditingStep() {
-    return this.session?.flow.steps.find((step) => step.id === this.editingStepId) ?? null;
+    return (
+      this.session?.flow.steps.find((step) => step.id === this.editingStepId) ??
+      null
+    );
   }
 
   private renderStepList() {
@@ -592,7 +652,9 @@ export class BuilderRuntime {
     this.dom.stepList.replaceChildren();
     const steps = this.getSortedSteps();
     const currentPath = normalizePath(window.location.pathname);
-    const currentPageCount = steps.filter((step) => step.page_path === currentPath).length;
+    const currentPageCount = steps.filter(
+      (step) => step.page_path === currentPath,
+    ).length;
     this.dom.listNote.textContent = steps.length
       ? `${steps.length} saved ${steps.length === 1 ? "step" : "steps"} • ${currentPageCount} on this page`
       : "Start by capturing the first element.";
@@ -600,7 +662,8 @@ export class BuilderRuntime {
     if (!steps.length) {
       const empty = document.createElement("div");
       empty.className = "guidora-sdk-builder-step-empty";
-      empty.textContent = "No steps yet. Capture the first product element to start the flow.";
+      empty.textContent =
+        "No steps yet. Capture the first product element to start the flow.";
       this.dom.stepList.append(empty);
       return;
     }
@@ -610,8 +673,12 @@ export class BuilderRuntime {
       card.type = "button";
       card.className = [
         "guidora-sdk-builder-step-card",
-        step.id === this.editingStepId ? "guidora-sdk-builder-step-card-active" : "",
-        step.page_path === currentPath ? "" : "guidora-sdk-builder-step-card-offpage",
+        step.id === this.editingStepId
+          ? "guidora-sdk-builder-step-card-active"
+          : "",
+        step.page_path === currentPath
+          ? ""
+          : "guidora-sdk-builder-step-card-offpage",
       ]
         .filter(Boolean)
         .join(" ");
@@ -637,11 +704,14 @@ export class BuilderRuntime {
       const scope = document.createElement("span");
       scope.className = [
         "guidora-sdk-builder-step-scope",
-        step.page_path === currentPath ? "guidora-sdk-builder-step-scope-active" : "",
+        step.page_path === currentPath
+          ? "guidora-sdk-builder-step-scope-active"
+          : "",
       ]
         .filter(Boolean)
         .join(" ");
-      scope.textContent = step.page_path === currentPath ? "This page" : step.page_path || "/";
+      scope.textContent =
+        step.page_path === currentPath ? "This page" : step.page_path || "/";
 
       const title = document.createElement("div");
       title.className = "guidora-sdk-builder-step-title";
@@ -679,9 +749,13 @@ export class BuilderRuntime {
     this.dom.stepValue.textContent = editingStep
       ? `Editing step ${editingStep.step_order}`
       : `Next step ${this.session.next_step_order}`;
-    this.dom.pathValue.textContent = this.dom.pagePathInput.value.trim() || normalizePath(window.location.pathname);
-    this.dom.selectorValue.textContent = this.selectedSelector || "Capture an element to see its selector.";
-    this.dom.deleteButton.disabled = !editingStep || this.isDeleting || this.isSaving;
+    this.dom.pathValue.textContent =
+      this.dom.pagePathInput.value.trim() ||
+      normalizePath(window.location.pathname);
+    this.dom.selectorValue.textContent =
+      this.selectedSelector || "Capture an element to see its selector.";
+    this.dom.deleteButton.disabled =
+      !editingStep || this.isDeleting || this.isSaving;
     this.dom.saveButton.textContent = editingStep ? "Update step" : "Save step";
   }
 
@@ -691,7 +765,10 @@ export class BuilderRuntime {
     }
 
     this.dom.statusValue.textContent = message;
-    this.dom.statusValue.classList.toggle("guidora-sdk-builder-status-error", tone === "error");
+    this.dom.statusValue.classList.toggle(
+      "guidora-sdk-builder-status-error",
+      tone === "error",
+    );
   }
 
   private togglePanelDock() {
@@ -711,13 +788,31 @@ export class BuilderRuntime {
       return;
     }
 
-    this.dom.panel.classList.toggle("guidora-sdk-builder-panel-left", this.panelDock === "left");
-    this.dom.panel.classList.toggle("guidora-sdk-builder-panel-right", this.panelDock === "right");
-    this.dom.panel.classList.toggle("guidora-sdk-builder-panel-collapsed", this.isPanelCollapsed);
-    this.dom.panel.classList.toggle("guidora-sdk-builder-panel-floating", Boolean(this.panelPosition));
-    this.dom.dockButton.textContent = this.panelDock === "left" ? "Dock right" : "Dock left";
-    this.dom.collapseButton.textContent = this.isPanelCollapsed ? "Expand" : "Minimize";
-    this.dom.collapseButton.setAttribute("aria-expanded", String(!this.isPanelCollapsed));
+    this.dom.panel.classList.toggle(
+      "guidora-sdk-builder-panel-left",
+      this.panelDock === "left",
+    );
+    this.dom.panel.classList.toggle(
+      "guidora-sdk-builder-panel-right",
+      this.panelDock === "right",
+    );
+    this.dom.panel.classList.toggle(
+      "guidora-sdk-builder-panel-collapsed",
+      this.isPanelCollapsed,
+    );
+    this.dom.panel.classList.toggle(
+      "guidora-sdk-builder-panel-floating",
+      Boolean(this.panelPosition),
+    );
+    this.dom.dockButton.textContent =
+      this.panelDock === "left" ? "Dock right" : "Dock left";
+    this.dom.collapseButton.textContent = this.isPanelCollapsed
+      ? "Expand"
+      : "Minimize";
+    this.dom.collapseButton.setAttribute(
+      "aria-expanded",
+      String(!this.isPanelCollapsed),
+    );
     this.applyPanelPosition();
   }
 
@@ -747,8 +842,14 @@ export class BuilderRuntime {
 
     const panelWidth = this.dom.panel.offsetWidth || 340;
     const panelHeight = this.dom.panel.offsetHeight || 640;
-    const maxLeft = Math.max(PANEL_MARGIN, window.innerWidth - panelWidth - PANEL_MARGIN);
-    const maxTop = Math.max(PANEL_MARGIN, window.innerHeight - panelHeight - PANEL_MARGIN);
+    const maxLeft = Math.max(
+      PANEL_MARGIN,
+      window.innerWidth - panelWidth - PANEL_MARGIN,
+    );
+    const maxTop = Math.max(
+      PANEL_MARGIN,
+      window.innerHeight - panelHeight - PANEL_MARGIN,
+    );
 
     this.panelPosition = {
       left: Math.min(Math.max(PANEL_MARGIN, left), maxLeft),
@@ -780,7 +881,11 @@ export class BuilderRuntime {
       return;
     }
 
-    this.setPanelPosition(this.panelPosition.left, this.panelPosition.top, this.isManualPanelPosition);
+    this.setPanelPosition(
+      this.panelPosition.left,
+      this.panelPosition.top,
+      this.isManualPanelPosition,
+    );
   }
 
   private positionPanelForTarget(target: HTMLElement | null) {
@@ -797,7 +902,10 @@ export class BuilderRuntime {
       return;
     }
 
-    const nextDock = targetRect.left + targetRect.width / 2 >= window.innerWidth / 2 ? "left" : "right";
+    const nextDock =
+      targetRect.left + targetRect.width / 2 >= window.innerWidth / 2
+        ? "left"
+        : "right";
     if (this.panelDock !== nextDock) {
       this.panelDock = nextDock;
       this.syncPanelChrome();
@@ -813,7 +921,9 @@ export class BuilderRuntime {
 
     const sessionToken = this.session.session.session_token;
     this.heartbeatId = window.setInterval(() => {
-      void this.api.builderHeartbeat({ sessionToken, domain: window.location.host }).catch((error: Error) => this.handleError(error));
+      void this.api
+        .builderHeartbeat({ sessionToken, domain: window.location.host })
+        .catch((error: Error) => this.handleError(error));
     }, HEARTBEAT_INTERVAL);
   }
 
@@ -835,7 +945,9 @@ export class BuilderRuntime {
     document.addEventListener("click", this.boundDocumentClick, true);
     window.addEventListener("resize", this.boundReposition);
     window.addEventListener("scroll", this.boundReposition, true);
-    this.setStatus("Click any product element to capture or replace the current selector.");
+    this.setStatus(
+      "Click any product element to capture or replace the current selector.",
+    );
   }
 
   private stopPicking() {
@@ -908,12 +1020,16 @@ export class BuilderRuntime {
     const editingStep = this.getEditingStep();
 
     if (editingStep && editingStep.page_path === currentPath) {
-      this.updatePreview(document.querySelector<HTMLElement>(editingStep.selector));
+      this.updatePreview(
+        document.querySelector<HTMLElement>(editingStep.selector),
+      );
       return;
     }
 
     if (this.selectedSelector && !this.editingStepId) {
-      this.updatePreview(document.querySelector<HTMLElement>(this.selectedSelector));
+      this.updatePreview(
+        document.querySelector<HTMLElement>(this.selectedSelector),
+      );
       return;
     }
 
@@ -925,7 +1041,9 @@ export class BuilderRuntime {
       return;
     }
 
-    const step = this.session.flow.steps.find((candidate) => candidate.id === stepId);
+    const step = this.session.flow.steps.find(
+      (candidate) => candidate.id === stepId,
+    );
     if (!step) {
       return;
     }
@@ -933,7 +1051,8 @@ export class BuilderRuntime {
     this.stopPicking();
     this.editingStepId = step.id;
     this.selectedSelector = step.selector;
-    this.dom.pagePathInput.value = step.page_path || normalizePath(window.location.pathname);
+    this.dom.pagePathInput.value =
+      step.page_path || normalizePath(window.location.pathname);
     this.dom.titleInput.value = step.tooltip_title || "";
     this.dom.bodyInput.value = step.tooltip_body || "";
     this.dom.positionSelect.value = step.position || "bottom";
@@ -943,11 +1062,15 @@ export class BuilderRuntime {
     this.refreshPreview();
 
     if (step.page_path !== normalizePath(window.location.pathname)) {
-      this.setStatus(`Editing step ${step.step_order}. Navigate to ${step.page_path} if you want to recapture its selector.`);
+      this.setStatus(
+        `Editing step ${step.step_order}. Navigate to ${step.page_path} if you want to recapture its selector.`,
+      );
       return;
     }
 
-    this.setStatus(`Editing step ${step.step_order}. You can update the copy or capture a new selector.`);
+    this.setStatus(
+      `Editing step ${step.step_order}. You can update the copy or capture a new selector.`,
+    );
   }
 
   private startNewStep(options: { autoCapture: boolean; announce: boolean }) {
@@ -973,7 +1096,9 @@ export class BuilderRuntime {
     }
 
     if (options.announce) {
-      this.setStatus("Switched to new step mode. Capture a new element or fill the form manually.");
+      this.setStatus(
+        "Switched to new step mode. Capture a new element or fill the form manually.",
+      );
     }
   }
 
@@ -983,7 +1108,10 @@ export class BuilderRuntime {
     }
 
     if (!this.selectedSelector) {
-      this.setStatus("Capture an element or choose an existing step before saving.", "error");
+      this.setStatus(
+        "Capture an element or choose an existing step before saving.",
+        "error",
+      );
       return;
     }
 
@@ -1002,30 +1130,42 @@ export class BuilderRuntime {
     this.dom.saveButton.textContent = editingStep ? "Updating..." : "Saving...";
 
     try {
-      const response = await this.api.builderSelect(this.session.session.session_token, {
-        domain: window.location.host,
-        pagePath: this.dom.pagePathInput.value.trim() || normalizePath(window.location.pathname),
-        selector: this.selectedSelector,
-        tooltipTitle: this.dom.titleInput.value.trim(),
-        tooltipBody: this.dom.bodyInput.value.trim(),
-        position: this.dom.positionSelect.value as TooltipPosition,
-        advanceMode: this.dom.advanceSelect.value as AdvanceMode,
-        waitForElement: true,
-        stepOrder: editingStep?.step_order ?? this.session.next_step_order,
-      });
+      const response = await this.api.builderSelect(
+        this.session.session.session_token,
+        {
+          domain: window.location.host,
+          pagePath:
+            this.dom.pagePathInput.value.trim() ||
+            normalizePath(window.location.pathname),
+          selector: this.selectedSelector,
+          tooltipTitle: this.dom.titleInput.value.trim(),
+          tooltipBody: this.dom.bodyInput.value.trim(),
+          position: this.dom.positionSelect.value as TooltipPosition,
+          advanceMode: this.dom.advanceSelect.value as AdvanceMode,
+          waitForElement: true,
+          stepOrder: editingStep?.step_order ?? this.session.next_step_order,
+        },
+      );
 
       this.mergeSavedStep(response);
       if (editingStep) {
         this.editStep(response.step.id);
-        this.setStatus(`Step ${response.step.step_order} updated. You can keep refining it or pick another step.`);
+        this.setStatus(
+          `Step ${response.step.step_order} updated. You can keep refining it or pick another step.`,
+        );
       } else {
         this.startNewStep({ autoCapture: false, announce: false });
-        this.setStatus(`Step ${response.step.step_order} created. Capture the next selector or edit an existing step.`);
+        this.setStatus(
+          `Step ${response.step.step_order} created. Capture the next selector or edit an existing step.`,
+        );
         this.startPicking();
       }
     } catch (error) {
       this.handleError(error as Error);
-      this.setStatus("The step could not be saved. Check the selector and try again.", "error");
+      this.setStatus(
+        "The step could not be saved. Check the selector and try again.",
+        "error",
+      );
     } finally {
       this.isSaving = false;
       if (this.dom) {
@@ -1043,7 +1183,9 @@ export class BuilderRuntime {
       return;
     }
 
-    const nextSteps = this.session.flow.steps.filter((existingStep) => existingStep.id !== response.step.id);
+    const nextSteps = this.session.flow.steps.filter(
+      (existingStep) => existingStep.id !== response.step.id,
+    );
     nextSteps.push(response.step);
     nextSteps.sort((left, right) => left.step_order - right.step_order);
 
@@ -1061,7 +1203,13 @@ export class BuilderRuntime {
   }
 
   private async deleteCurrentStep() {
-    if (!this.dom || !this.session || !this.editingStepId || this.isDeleting || this.isSaving) {
+    if (
+      !this.dom ||
+      !this.session ||
+      !this.editingStepId ||
+      this.isDeleting ||
+      this.isSaving
+    ) {
       return;
     }
 
@@ -1081,7 +1229,9 @@ export class BuilderRuntime {
       });
       this.applyDeletedSteps(response);
       this.startNewStep({ autoCapture: false, announce: false });
-      this.setStatus("Step deleted. Remaining steps were reindexed automatically.");
+      this.setStatus(
+        "Step deleted. Remaining steps were reindexed automatically.",
+      );
     } catch (error) {
       this.handleError(error as Error);
       this.setStatus("The step could not be deleted.", "error");

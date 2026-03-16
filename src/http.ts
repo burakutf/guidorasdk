@@ -35,7 +35,12 @@ export class GuidoraApiClient {
     this.config = config;
   }
 
-  async bootstrap(payload: Required<Pick<BootstrapOptions, "anonymousId" | "sessionKey" | "path">> & BootstrapOptions) {
+  async bootstrap(
+    payload: Required<
+      Pick<BootstrapOptions, "anonymousId" | "sessionKey" | "path">
+    > &
+      BootstrapOptions,
+  ) {
     return this.post<SdkBootstrapResponse>("sdk/bootstrap/", {
       api_key: this.config.apiKey,
       domain: normalizeDomain(payload.domain ?? this.config.domain),
@@ -47,7 +52,13 @@ export class GuidoraApiClient {
     });
   }
 
-  async track(eventType: GuideEventType, payload: Required<Pick<TrackEventOptions, "anonymousId" | "sessionKey" | "path">> & TrackEventOptions) {
+  async track(
+    eventType: GuideEventType,
+    payload: Required<
+      Pick<TrackEventOptions, "anonymousId" | "sessionKey" | "path">
+    > &
+      TrackEventOptions,
+  ) {
     return this.post<SdkEventResponse>("sdk/events/", {
       api_key: this.config.apiKey,
       domain: normalizeDomain(payload.domain ?? this.config.domain),
@@ -65,7 +76,10 @@ export class GuidoraApiClient {
 
   async resolveIntent(
     question: string,
-    payload: Required<Pick<ResolveIntentOptions, "anonymousId" | "sessionKey" | "path">> & ResolveIntentOptions,
+    payload: Required<
+      Pick<ResolveIntentOptions, "anonymousId" | "sessionKey" | "path">
+    > &
+      ResolveIntentOptions,
   ) {
     return this.post<SdkResolveIntentResponse>("sdk/resolve-intent/", {
       api_key: this.config.apiKey,
@@ -116,7 +130,11 @@ export class GuidoraApiClient {
     });
   }
 
-  async builderDeleteStep(payload: { sessionToken: string; domain?: string; stepId: number }) {
+  async builderDeleteStep(payload: {
+    sessionToken: string;
+    domain?: string;
+    stepId: number;
+  }) {
     return this.post<SdkBuilderDeleteResponse>("sdk/builder/delete-step/", {
       session_token: payload.sessionToken,
       domain: normalizeDomain(payload.domain ?? this.config.domain),
@@ -125,21 +143,28 @@ export class GuidoraApiClient {
   }
 
   private async post<T>(endpoint: string, payload: Record<string, unknown>) {
-    const response = await fetch(resolveApiUrl(this.config.apiBaseUrl, endpoint), {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
+    const response = await fetch(
+      resolveApiUrl(this.config.apiBaseUrl, endpoint),
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        credentials: "omit",
       },
-      body: JSON.stringify(payload),
-      credentials: "omit",
-    });
+    );
 
     const contentType = response.headers.get("content-type") ?? "";
-    const responsePayload = contentType.includes("application/json") ? await response.json() : await response.text();
+    const responsePayload = contentType.includes("application/json")
+      ? await response.json()
+      : await response.text();
 
     if (!response.ok) {
-      const message = extractApiMessage(responsePayload) ?? `Guidora request failed with status ${response.status}.`;
+      const message =
+        extractApiMessage(responsePayload) ??
+        `Guidora request failed with status ${response.status}.`;
       throw new GuidoraApiError(message, response.status, responsePayload);
     }
 
