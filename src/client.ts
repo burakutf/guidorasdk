@@ -14,7 +14,12 @@ import type {
   SdkFlowProgress,
   TrackEventOptions,
 } from "./types";
-import { invariantBrowser, normalizePath, observeNavigation, readQueryParam } from "./utils";
+import {
+  invariantBrowser,
+  normalizePath,
+  observeNavigation,
+  readQueryParam,
+} from "./utils";
 
 const BUILDER_QUERY_PARAM = "guidora_builder";
 
@@ -26,7 +31,8 @@ export class GuidoraBrowserClient implements GuidoraClient {
   private readonly tooltipRuntime: TooltipRuntime;
   private removeNavigationObserver: (() => void) | null = null;
   private lastBootstrapPath = "";
-  private builderBootstrapPromise: Promise<SdkBuilderBootstrapResponse> | null = null;
+  private builderBootstrapPromise: Promise<SdkBuilderBootstrapResponse> | null =
+    null;
 
   constructor(config: GuidoraConfig) {
     invariantBrowser();
@@ -55,9 +61,11 @@ export class GuidoraBrowserClient implements GuidoraClient {
         const nextPath = normalizePath(window.location.pathname);
         if (this.builderRuntime.isActive()) {
           this.lastBootstrapPath = nextPath;
-          void this.builderRuntime.handleLocationChange().catch((error: Error) => {
-            this.handleError(error);
-          });
+          void this.builderRuntime
+            .handleLocationChange()
+            .catch((error: Error) => {
+              this.handleError(error);
+            });
           return;
         }
         if (nextPath === this.lastBootstrapPath) {
@@ -87,7 +95,11 @@ export class GuidoraBrowserClient implements GuidoraClient {
       const builderSession = await this.maybeStartBuilderMode();
       if (builderSession) {
         this.tooltipRuntime.hide();
-        return this.createBuilderBootstrapResponse(builderSession, path, options);
+        return this.createBuilderBootstrapResponse(
+          builderSession,
+          path,
+          options,
+        );
       }
 
       const response = await this.api.bootstrap({
@@ -98,7 +110,9 @@ export class GuidoraBrowserClient implements GuidoraClient {
       });
 
       if (response.flow && response.progress) {
-        await this.startFlow(response.flow, response.progress, { emitFlowStarted: false });
+        await this.startFlow(response.flow, response.progress, {
+          emitFlowStarted: false,
+        });
       } else {
         this.tooltipRuntime.hide();
       }
@@ -120,7 +134,9 @@ export class GuidoraBrowserClient implements GuidoraClient {
       });
 
       if (response.flow && response.progress) {
-        await this.startFlow(response.flow, response.progress, { emitFlowStarted: true });
+        await this.startFlow(response.flow, response.progress, {
+          emitFlowStarted: true,
+        });
       }
 
       return response;
@@ -183,7 +199,9 @@ export class GuidoraBrowserClient implements GuidoraClient {
   }
 
   private getOrderedSteps(flow: SdkFlow) {
-    return [...flow.steps].sort((left, right) => left.step_order - right.step_order);
+    return [...flow.steps].sort(
+      (left, right) => left.step_order - right.step_order,
+    );
   }
 
   private resolveActiveStep(flow: SdkFlow, currentStepOrder: number) {
@@ -200,7 +218,9 @@ export class GuidoraBrowserClient implements GuidoraClient {
   }
 
   private routeToStepIfNeeded(step: SdkFlowStep) {
-    const targetPath = normalizePath(step.page_path || window.location.pathname);
+    const targetPath = normalizePath(
+      step.page_path || window.location.pathname,
+    );
     if (targetPath === normalizePath(window.location.pathname)) {
       return false;
     }
@@ -236,8 +256,13 @@ export class GuidoraBrowserClient implements GuidoraClient {
     };
   }
 
-  private async startFlow(flow: SdkFlow, progress: SdkFlowProgress, options: { emitFlowStarted: boolean }) {
-    const currentStepOrder = progress.current_step_order || flow.steps[0]?.step_order || 1;
+  private async startFlow(
+    flow: SdkFlow,
+    progress: SdkFlowProgress,
+    options: { emitFlowStarted: boolean },
+  ) {
+    const currentStepOrder =
+      progress.current_step_order || flow.steps[0]?.step_order || 1;
     const activeStep = this.resolveActiveStep(flow, currentStepOrder);
 
     if (!activeStep) {
@@ -288,7 +313,10 @@ export class GuidoraBrowserClient implements GuidoraClient {
     });
   }
 
-  private async safeTrack(eventType: GuideEventType, options: TrackEventOptions) {
+  private async safeTrack(
+    eventType: GuideEventType,
+    options: TrackEventOptions,
+  ) {
     try {
       await this.track(eventType, options);
     } catch (error) {

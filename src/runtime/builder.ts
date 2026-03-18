@@ -589,7 +589,11 @@ export class BuilderRuntime {
     addStepButton.type = "button";
     addStepButton.className = "guidora-sdk-builder-action-card";
     addStepButton.addEventListener("click", () => {
-      if (this.isPicking && this.draft?.stepId === null && this.draft.mode === "highlight") {
+      if (
+        this.isPicking &&
+        this.draft?.stepId === null &&
+        this.draft.mode === "highlight"
+      ) {
         this.closeEditor();
         return;
       }
@@ -601,7 +605,8 @@ export class BuilderRuntime {
     addStepTitle.textContent = "Add highlight";
     const addStepCopy = document.createElement("span");
     addStepCopy.className = "guidora-sdk-builder-action-copy";
-    addStepCopy.textContent = "Pick a place on the site and attach a tooltip there.";
+    addStepCopy.textContent =
+      "Pick a place on the site and attach a tooltip there.";
     addStepButton.append(addStepTitle, addStepCopy);
 
     const addPopupButton = document.createElement("button");
@@ -616,7 +621,8 @@ export class BuilderRuntime {
     addPopupTitle.textContent = "Open trigger popup";
     const addPopupCopy = document.createElement("span");
     addPopupCopy.className = "guidora-sdk-builder-action-copy";
-    addPopupCopy.textContent = "Show a page-open popup without selecting a specific element.";
+    addPopupCopy.textContent =
+      "Show a page-open popup without selecting a specific element.";
     addPopupButton.append(addPopupTitle, addPopupCopy);
 
     actionDeck.append(addStepButton, addPopupButton);
@@ -635,8 +641,7 @@ export class BuilderRuntime {
     rightRail.append(rightHeader, actionDeck, stepNote, stepList, statusValue);
 
     const editor = document.createElement("div");
-    editor.className =
-      "guidora-sdk-builder-editor guidora-sdk-builder-hidden";
+    editor.className = "guidora-sdk-builder-editor guidora-sdk-builder-hidden";
 
     const editorChip = document.createElement("span");
     editorChip.className = "guidora-sdk-builder-editor-chip";
@@ -862,7 +867,9 @@ export class BuilderRuntime {
   }
 
   private getStepById(stepId: number) {
-    return this.getActiveFlow()?.steps.find((step) => step.id === stepId) ?? null;
+    return (
+      this.getActiveFlow()?.steps.find((step) => step.id === stepId) ?? null
+    );
   }
 
   private getSortedSteps(flow: SdkFlow | null = this.getActiveFlow()) {
@@ -907,7 +914,8 @@ export class BuilderRuntime {
 
     return (
       flowForm.name.trim() !== activeFlow.name ||
-      normalizePath(flowForm.entryPath || "/") !== this.getActiveFlowEntryPath(activeFlow)
+      normalizePath(flowForm.entryPath || "/") !==
+        this.getActiveFlowEntryPath(activeFlow)
     );
   }
 
@@ -1150,8 +1158,10 @@ export class BuilderRuntime {
     this.dom.addPopupButton.disabled = !activeFlow || isBusy;
     this.dom.flowNameInput.disabled = !activeFlow || isBusy;
     this.dom.flowPathInput.disabled = !activeFlow || isBusy;
-    this.dom.flowSaveButton.disabled = !activeFlow || isBusy || !this.hasPendingFlowChanges();
-    this.dom.flowDeleteButton.disabled = !activeFlow || isBusy || !this.canDeleteActiveFlow();
+    this.dom.flowSaveButton.disabled =
+      !activeFlow || isBusy || !this.hasPendingFlowChanges();
+    this.dom.flowDeleteButton.disabled =
+      !activeFlow || isBusy || !this.canDeleteActiveFlow();
 
     this.dom.newFlowButton.textContent = this.isCreatingFlow
       ? "Creating..."
@@ -1171,7 +1181,9 @@ export class BuilderRuntime {
     );
     if (addStepTitle) {
       addStepTitle.textContent =
-        this.isPicking && this.draft?.stepId === null && this.draft.mode === "highlight"
+        this.isPicking &&
+        this.draft?.stepId === null &&
+        this.draft.mode === "highlight"
           ? "Cancel selection"
           : "Add highlight";
     }
@@ -1188,7 +1200,9 @@ export class BuilderRuntime {
 
     this.dom.activeFlowName.textContent = activeFlow.name;
     this.dom.activeFlowMeta.textContent = `${formatFlowTypeLabel(activeFlow.type)} • ${formatFlowStatusLabel(activeFlow.status)} • ${this.getActiveFlowEntryPath(activeFlow)}`;
-    this.dom.flowStatusBadge.textContent = formatFlowStatusLabel(activeFlow.status);
+    this.dom.flowStatusBadge.textContent = formatFlowStatusLabel(
+      activeFlow.status,
+    );
     this.dom.flowStatusBadge.className = [
       "guidora-sdk-builder-flow-status",
       activeFlow.status === "published"
@@ -1196,7 +1210,8 @@ export class BuilderRuntime {
         : "guidora-sdk-builder-flow-status-draft",
     ].join(" ");
     this.dom.flowNameInput.value = flowForm?.name ?? activeFlow.name;
-    this.dom.flowPathInput.value = flowForm?.entryPath ?? this.getActiveFlowEntryPath(activeFlow);
+    this.dom.flowPathInput.value =
+      flowForm?.entryPath ?? this.getActiveFlowEntryPath(activeFlow);
   }
 
   private startHeartbeat() {
@@ -1307,11 +1322,7 @@ export class BuilderRuntime {
 
     this.hoveredStepId = match.step.id;
     this.hoveredElement = match.element;
-    this.showHighlight(
-      match.element,
-      `Step ${match.step.step_order}`,
-      "hover",
-    );
+    this.showHighlight(match.element, `Step ${match.step.step_order}`, "hover");
   }
 
   private showHighlight(
@@ -1396,9 +1407,7 @@ export class BuilderRuntime {
     this.refreshCanvas();
 
     if (this.editingElement) {
-      this.setStatus(
-        `Editing ${getStepTitle(step)} directly on the canvas.`,
-      );
+      this.setStatus(`Editing ${getStepTitle(step)} directly on the canvas.`);
       return;
     }
 
@@ -1513,7 +1522,9 @@ export class BuilderRuntime {
   }
 
   private shouldHideEditorWhilePicking() {
-    return Boolean(this.draft && this.isPicking && this.draft.mode === "highlight");
+    return Boolean(
+      this.draft && this.isPicking && this.draft.mode === "highlight",
+    );
   }
 
   private positionEditor() {
@@ -1524,15 +1535,25 @@ export class BuilderRuntime {
     const card = this.dom.editor;
     const width = card.offsetWidth || 340;
     const height = card.offsetHeight || 320;
-    const minLeft = window.innerWidth <= MOBILE_BREAKPOINT ? 16 : LEFT_RAIL_WIDTH + 20;
-    const maxLeft = window.innerWidth <= MOBILE_BREAKPOINT
-      ? window.innerWidth - width - 16
-      : window.innerWidth - RIGHT_RAIL_WIDTH - width - 20;
+    const minLeft =
+      window.innerWidth <= MOBILE_BREAKPOINT ? 16 : LEFT_RAIL_WIDTH + 20;
+    const maxLeft =
+      window.innerWidth <= MOBILE_BREAKPOINT
+        ? window.innerWidth - width - 16
+        : window.innerWidth - RIGHT_RAIL_WIDTH - width - 20;
 
     const anchor = this.getDraftAnchorElement();
     if (!anchor) {
-      const centeredLeft = clamp((window.innerWidth - width) / 2, 16, Math.max(16, maxLeft));
-      const centeredTop = clamp((window.innerHeight - height) / 2, 16, window.innerHeight - height - 16);
+      const centeredLeft = clamp(
+        (window.innerWidth - width) / 2,
+        16,
+        Math.max(16, maxLeft),
+      );
+      const centeredTop = clamp(
+        (window.innerHeight - height) / 2,
+        16,
+        window.innerHeight - height - 16,
+      );
       card.style.left = `${centeredLeft}px`;
       card.style.top = `${centeredTop}px`;
       return;
@@ -1613,9 +1634,13 @@ export class BuilderRuntime {
   }
 
   private setActiveFlow(flow: SdkFlow, nextStepOrder: number) {
-    const nextFlows = this.flows.filter((candidate) => candidate.id !== flow.id);
+    const nextFlows = this.flows.filter(
+      (candidate) => candidate.id !== flow.id,
+    );
     nextFlows.push(flow);
-    nextFlows.sort((left, right) => left.priority - right.priority || left.id - right.id);
+    nextFlows.sort(
+      (left, right) => left.priority - right.priority || left.id - right.id,
+    );
     this.flows = nextFlows;
     this.flowForm = null;
 
@@ -1777,7 +1802,9 @@ export class BuilderRuntime {
       });
       this.applyFlowMutation(response);
       this.closeEditor();
-      this.setStatus(`${deletedName} deleted. Switched to ${response.flow.name}.`);
+      this.setStatus(
+        `${deletedName} deleted. Switched to ${response.flow.name}.`,
+      );
     } catch (error) {
       this.handleError(error as Error);
       this.setStatus("The flow could not be deleted.", "error");
@@ -1794,7 +1821,10 @@ export class BuilderRuntime {
 
     const selector = this.draft.selector.trim();
     if (!selector) {
-      this.setStatus("Choose a place on the site before saving the step.", "error");
+      this.setStatus(
+        "Choose a place on the site before saving the step.",
+        "error",
+      );
       return;
     }
 
@@ -1828,7 +1858,9 @@ export class BuilderRuntime {
       this.mergeSavedStep(response);
       this.openEditorForStep(response.step.id);
       this.setStatus(
-        editingStep ? "Step updated on the canvas." : "New step added to the flow.",
+        editingStep
+          ? "Step updated on the canvas."
+          : "New step added to the flow.",
       );
     } catch (error) {
       this.handleError(error as Error);
@@ -1864,7 +1896,12 @@ export class BuilderRuntime {
   }
 
   private async deleteCurrentStep() {
-    if (!this.session || !this.draft?.stepId || this.isDeleting || this.isSaving) {
+    if (
+      !this.session ||
+      !this.draft?.stepId ||
+      this.isDeleting ||
+      this.isSaving
+    ) {
       return;
     }
 
@@ -1936,7 +1973,11 @@ export class BuilderRuntime {
   }
 
   private async handleStepDrop(targetStepId: number) {
-    if (!this.session || !this.draggingStepId || this.draggingStepId === targetStepId) {
+    if (
+      !this.session ||
+      !this.draggingStepId ||
+      this.draggingStepId === targetStepId
+    ) {
       this.clearStepDragState();
       return;
     }

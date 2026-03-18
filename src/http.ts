@@ -125,13 +125,16 @@ export class GuidoraApiClient {
     name?: string;
     type?: string;
   }) {
-    return this.post<SdkBuilderFlowMutationResponse>("sdk/builder/create-flow/", {
-      session_token: payload.sessionToken,
-      domain: normalizeDomain(payload.domain ?? this.config.domain),
-      page_path: normalizePath(payload.pagePath ?? "/"),
-      name: payload.name ?? "",
-      type: payload.type ?? "onboarding_tooltip",
-    });
+    return this.post<SdkBuilderFlowMutationResponse>(
+      "sdk/builder/create-flow/",
+      {
+        session_token: payload.sessionToken,
+        domain: normalizeDomain(payload.domain ?? this.config.domain),
+        page_path: normalizePath(payload.pagePath ?? "/"),
+        name: payload.name ?? "",
+        type: payload.type ?? "onboarding_tooltip",
+      },
+    );
   }
 
   async builderSwitchFlow(payload: {
@@ -140,12 +143,15 @@ export class GuidoraApiClient {
     flowId: number;
     pagePath?: string;
   }) {
-    return this.post<SdkBuilderFlowMutationResponse>("sdk/builder/switch-flow/", {
-      session_token: payload.sessionToken,
-      domain: normalizeDomain(payload.domain ?? this.config.domain),
-      flow_id: payload.flowId,
-      page_path: normalizePath(payload.pagePath ?? "/"),
-    });
+    return this.post<SdkBuilderFlowMutationResponse>(
+      "sdk/builder/switch-flow/",
+      {
+        session_token: payload.sessionToken,
+        domain: normalizeDomain(payload.domain ?? this.config.domain),
+        flow_id: payload.flowId,
+        page_path: normalizePath(payload.pagePath ?? "/"),
+      },
+    );
   }
 
   async builderUpdateFlow(payload: {
@@ -155,13 +161,19 @@ export class GuidoraApiClient {
     name?: string;
     pagePath?: string;
   }) {
-    return this.post<SdkBuilderFlowMutationResponse>("sdk/builder/update-flow/", {
-      session_token: payload.sessionToken,
-      domain: normalizeDomain(payload.domain ?? this.config.domain),
-      flow_id: payload.flowId,
-      name: payload.name,
-      page_path: payload.pagePath === undefined ? undefined : normalizePath(payload.pagePath || "/"),
-    });
+    return this.post<SdkBuilderFlowMutationResponse>(
+      "sdk/builder/update-flow/",
+      {
+        session_token: payload.sessionToken,
+        domain: normalizeDomain(payload.domain ?? this.config.domain),
+        flow_id: payload.flowId,
+        name: payload.name,
+        page_path:
+          payload.pagePath === undefined
+            ? undefined
+            : normalizePath(payload.pagePath || "/"),
+      },
+    );
   }
 
   async builderDeleteFlow(payload: {
@@ -170,12 +182,15 @@ export class GuidoraApiClient {
     flowId: number;
     pagePath?: string;
   }) {
-    return this.post<SdkBuilderFlowMutationResponse>("sdk/builder/delete-flow/", {
-      session_token: payload.sessionToken,
-      domain: normalizeDomain(payload.domain ?? this.config.domain),
-      flow_id: payload.flowId,
-      page_path: normalizePath(payload.pagePath ?? "/"),
-    });
+    return this.post<SdkBuilderFlowMutationResponse>(
+      "sdk/builder/delete-flow/",
+      {
+        session_token: payload.sessionToken,
+        domain: normalizeDomain(payload.domain ?? this.config.domain),
+        flow_id: payload.flowId,
+        page_path: normalizePath(payload.pagePath ?? "/"),
+      },
+    );
   }
 
   async builderSelect(sessionToken: string, payload: SdkBuilderSelectOptions) {

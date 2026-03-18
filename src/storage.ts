@@ -19,12 +19,18 @@ export class GuidoraStorage {
 
   getBuilderSessionToken() {
     invariantBrowser();
-    return window.sessionStorage.getItem(this.buildKey("builder-session-token")) ?? "";
+    return (
+      window.sessionStorage.getItem(this.buildKey("builder-session-token")) ??
+      ""
+    );
   }
 
   setBuilderSessionToken(sessionToken: string) {
     invariantBrowser();
-    window.sessionStorage.setItem(this.buildKey("builder-session-token"), sessionToken);
+    window.sessionStorage.setItem(
+      this.buildKey("builder-session-token"),
+      sessionToken,
+    );
   }
 
   clearBuilderSessionToken() {

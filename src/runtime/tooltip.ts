@@ -36,7 +36,11 @@ export class TooltipRuntime {
     this.zIndex = zIndex;
   }
 
-  async start(flow: SdkFlow, currentStepOrder: number, handlers: TooltipRuntimeHandlers) {
+  async start(
+    flow: SdkFlow,
+    currentStepOrder: number,
+    handlers: TooltipRuntimeHandlers,
+  ) {
     injectGuidoraStyles(this.zIndex);
     this.ensureDom();
 
@@ -117,7 +121,8 @@ export class TooltipRuntime {
 
     this.dismissButton = document.createElement("button");
     this.dismissButton.type = "button";
-    this.dismissButton.className = "guidora-sdk-button guidora-sdk-button-secondary";
+    this.dismissButton.className =
+      "guidora-sdk-button guidora-sdk-button-secondary";
     this.dismissButton.textContent = "Dismiss";
     this.dismissButton.addEventListener("click", () => {
       void this.handleDismiss();
@@ -146,7 +151,15 @@ export class TooltipRuntime {
     const stepLabel = this.stepLabel;
     const nextButton = this.nextButton;
 
-    if (!session || !card || !highlight || !title || !body || !stepLabel || !nextButton) {
+    if (
+      !session ||
+      !card ||
+      !highlight ||
+      !title ||
+      !body ||
+      !stepLabel ||
+      !nextButton
+    ) {
       return;
     }
 
@@ -160,9 +173,15 @@ export class TooltipRuntime {
     const token = ++this.renderToken;
 
     title.textContent = step.tooltip_title || session.flow.name;
-    body.textContent = step.tooltip_body || session.flow.description || "Continue through the highlighted product step.";
+    body.textContent =
+      step.tooltip_body ||
+      session.flow.description ||
+      "Continue through the highlighted product step.";
     stepLabel.textContent = `Step ${session.currentStepIndex + 1} of ${session.flow.steps.length}`;
-    nextButton.textContent = this.buildNextLabel(step, session.currentStepIndex === session.flow.steps.length - 1);
+    nextButton.textContent = this.buildNextLabel(
+      step,
+      session.currentStepIndex === session.flow.steps.length - 1,
+    );
 
     const target = await this.resolveTarget(step, token);
     if (token !== this.renderToken || !this.activeSession) {
@@ -191,7 +210,11 @@ export class TooltipRuntime {
     while (token === this.renderToken) {
       const element = document.querySelector<HTMLElement>(step.selector);
       if (element) {
-        element.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
+        element.scrollIntoView({
+          block: "center",
+          inline: "center",
+          behavior: "smooth",
+        });
         return element;
       }
 
@@ -241,20 +264,28 @@ export class TooltipRuntime {
 
     const rect = target.getBoundingClientRect();
     let top = rect.bottom + gap;
-    let left = rect.left + (rect.width / 2) - (cardWidth / 2);
+    let left = rect.left + rect.width / 2 - cardWidth / 2;
 
     if (position === "top") {
       top = rect.top - cardHeight - gap;
     } else if (position === "right") {
-      top = rect.top + (rect.height / 2) - (cardHeight / 2);
+      top = rect.top + rect.height / 2 - cardHeight / 2;
       left = rect.right + gap;
     } else if (position === "left") {
-      top = rect.top + (rect.height / 2) - (cardHeight / 2);
+      top = rect.top + rect.height / 2 - cardHeight / 2;
       left = rect.left - cardWidth - gap;
     }
 
-    top = clamp(top, viewportPadding, window.innerHeight - cardHeight - viewportPadding);
-    left = clamp(left, viewportPadding, window.innerWidth - cardWidth - viewportPadding);
+    top = clamp(
+      top,
+      viewportPadding,
+      window.innerHeight - cardHeight - viewportPadding,
+    );
+    left = clamp(
+      left,
+      viewportPadding,
+      window.innerWidth - cardWidth - viewportPadding,
+    );
 
     this.card.style.top = `${top}px`;
     this.card.style.left = `${left}px`;
@@ -280,9 +311,16 @@ export class TooltipRuntime {
         void this.handleAdvance();
       };
 
-      this.currentTarget.addEventListener("click", handleTargetClick, { once: true, capture: true });
+      this.currentTarget.addEventListener("click", handleTargetClick, {
+        once: true,
+        capture: true,
+      });
       this.cleanupCallbacks.push(() => {
-        this.currentTarget?.removeEventListener("click", handleTargetClick, true);
+        this.currentTarget?.removeEventListener(
+          "click",
+          handleTargetClick,
+          true,
+        );
       });
       return;
     }
@@ -312,7 +350,9 @@ export class TooltipRuntime {
   }
 
   private routeToStep(step: SdkFlowStep) {
-    const targetPath = normalizePath(step.page_path || window.location.pathname);
+    const targetPath = normalizePath(
+      step.page_path || window.location.pathname,
+    );
     if (targetPath === normalizePath(window.location.pathname)) {
       return false;
     }
