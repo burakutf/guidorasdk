@@ -17,8 +17,27 @@ export class GuidoraStorage {
     return this.getOrCreate(window.sessionStorage, "session-key");
   }
 
+  getBuilderSessionToken() {
+    invariantBrowser();
+    return window.sessionStorage.getItem(this.buildKey("builder-session-token")) ?? "";
+  }
+
+  setBuilderSessionToken(sessionToken: string) {
+    invariantBrowser();
+    window.sessionStorage.setItem(this.buildKey("builder-session-token"), sessionToken);
+  }
+
+  clearBuilderSessionToken() {
+    invariantBrowser();
+    window.sessionStorage.removeItem(this.buildKey("builder-session-token"));
+  }
+
+  private buildKey(key: string) {
+    return `${this.storagePrefix}:${key}`;
+  }
+
   private getOrCreate(storage: Storage, key: string) {
-    const fullKey = `${this.storagePrefix}:${key}`;
+    const fullKey = this.buildKey(key);
     const existingValue = storage.getItem(fullKey);
     if (existingValue) {
       return existingValue;

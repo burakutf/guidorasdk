@@ -95,9 +95,11 @@ export interface SdkFlow {
   slug: string;
   name: string;
   type: string;
+  status: string;
   description: string;
   priority: number;
   trigger_once_per_visitor: boolean;
+  entry_path: string;
   steps: SdkFlowStep[];
 }
 
@@ -202,6 +204,25 @@ export interface SdkBuilderSelectResponse {
 export interface SdkBuilderDeleteResponse {
   deleted: boolean;
   steps: SdkFlowStep[];
+  next_step_order: number;
+}
+
+export interface SdkBuilderReorderResponse {
+  reordered: boolean;
+  steps: SdkFlowStep[];
+  next_step_order: number;
+}
+
+export interface SdkBuilderFlowCollectionResponse {
+  flows: SdkFlow[];
+  active_flow_id: number;
+}
+
+export interface SdkBuilderFlowMutationResponse {
+  session: SdkBuilderSession;
+  flow: SdkFlow;
+  flows: SdkFlow[];
+  active_flow_id: number;
   next_step_order: number;
 }
 

@@ -1,5 +1,5 @@
 import type { SdkFlow, SdkFlowStep } from "../types";
-import { clamp, wait } from "../utils";
+import { clamp, normalizePath, wait } from "../utils";
 import { injectGuidoraStyles } from "./style";
 
 type TooltipRuntimeHandlers = {
@@ -311,6 +311,17 @@ export class TooltipRuntime {
     return "Next step";
   }
 
+  private routeToStep(step: SdkFlowStep) {
+    const targetPath = normalizePath(step.page_path || window.location.pathname);
+    if (targetPath === normalizePath(window.location.pathname)) {
+      return false;
+    }
+
+    this.hide();
+    window.location.assign(targetPath);
+    return true;
+  }
+
   private async handleAdvance() {
     const session = this.activeSession;
     if (!session) {
@@ -330,7 +341,13 @@ export class TooltipRuntime {
       return;
     }
 
+    const nextStep = session.flow.steps[session.currentStepIndex + 1];
     session.currentStepIndex += 1;
+
+    if (nextStep && this.routeToStep(nextStep)) {
+      return;
+    }
+
     await this.renderCurrentStep();
   }
 

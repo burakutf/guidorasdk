@@ -6,7 +6,10 @@ import type {
   SdkBuilderBootstrapResponse,
   SdkBuilderCloseResponse,
   SdkBuilderDeleteResponse,
+  SdkBuilderFlowCollectionResponse,
+  SdkBuilderFlowMutationResponse,
   SdkBuilderHeartbeatResponse,
+  SdkBuilderReorderResponse,
   SdkBuilderSelectOptions,
   SdkBuilderSelectResponse,
   SdkBootstrapResponse,
@@ -108,6 +111,73 @@ export class GuidoraApiClient {
     });
   }
 
+  async builderListFlows(payload: { sessionToken: string; domain?: string }) {
+    return this.post<SdkBuilderFlowCollectionResponse>("sdk/builder/flows/", {
+      session_token: payload.sessionToken,
+      domain: normalizeDomain(payload.domain ?? this.config.domain),
+    });
+  }
+
+  async builderCreateFlow(payload: {
+    sessionToken: string;
+    domain?: string;
+    pagePath?: string;
+    name?: string;
+    type?: string;
+  }) {
+    return this.post<SdkBuilderFlowMutationResponse>("sdk/builder/create-flow/", {
+      session_token: payload.sessionToken,
+      domain: normalizeDomain(payload.domain ?? this.config.domain),
+      page_path: normalizePath(payload.pagePath ?? "/"),
+      name: payload.name ?? "",
+      type: payload.type ?? "onboarding_tooltip",
+    });
+  }
+
+  async builderSwitchFlow(payload: {
+    sessionToken: string;
+    domain?: string;
+    flowId: number;
+    pagePath?: string;
+  }) {
+    return this.post<SdkBuilderFlowMutationResponse>("sdk/builder/switch-flow/", {
+      session_token: payload.sessionToken,
+      domain: normalizeDomain(payload.domain ?? this.config.domain),
+      flow_id: payload.flowId,
+      page_path: normalizePath(payload.pagePath ?? "/"),
+    });
+  }
+
+  async builderUpdateFlow(payload: {
+    sessionToken: string;
+    domain?: string;
+    flowId: number;
+    name?: string;
+    pagePath?: string;
+  }) {
+    return this.post<SdkBuilderFlowMutationResponse>("sdk/builder/update-flow/", {
+      session_token: payload.sessionToken,
+      domain: normalizeDomain(payload.domain ?? this.config.domain),
+      flow_id: payload.flowId,
+      name: payload.name,
+      page_path: payload.pagePath === undefined ? undefined : normalizePath(payload.pagePath || "/"),
+    });
+  }
+
+  async builderDeleteFlow(payload: {
+    sessionToken: string;
+    domain?: string;
+    flowId: number;
+    pagePath?: string;
+  }) {
+    return this.post<SdkBuilderFlowMutationResponse>("sdk/builder/delete-flow/", {
+      session_token: payload.sessionToken,
+      domain: normalizeDomain(payload.domain ?? this.config.domain),
+      flow_id: payload.flowId,
+      page_path: normalizePath(payload.pagePath ?? "/"),
+    });
+  }
+
   async builderSelect(sessionToken: string, payload: SdkBuilderSelectOptions) {
     return this.post<SdkBuilderSelectResponse>("sdk/builder/select/", {
       session_token: sessionToken,
@@ -139,6 +209,18 @@ export class GuidoraApiClient {
       session_token: payload.sessionToken,
       domain: normalizeDomain(payload.domain ?? this.config.domain),
       step_id: payload.stepId,
+    });
+  }
+
+  async builderReorderSteps(payload: {
+    sessionToken: string;
+    domain?: string;
+    stepIds: number[];
+  }) {
+    return this.post<SdkBuilderReorderResponse>("sdk/builder/reorder-steps/", {
+      session_token: payload.sessionToken,
+      domain: normalizeDomain(payload.domain ?? this.config.domain),
+      step_ids: payload.stepIds,
     });
   }
 

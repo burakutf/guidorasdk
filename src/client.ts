@@ -33,9 +33,21 @@ export class GuidoraBrowserClient implements GuidoraClient {
     this.config = config;
     this.storage = new GuidoraStorage(config.storagePrefix);
     this.api = new GuidoraApiClient(config);
-    this.builderRuntime = new BuilderRuntime(this.api, config.zIndex, (error) => {
-      this.handleError(error);
-    });
+    this.builderRuntime = new BuilderRuntime(
+      this.api,
+      config.zIndex,
+      (error) => {
+        this.handleError(error);
+      },
+      (sessionToken) => {
+        if (sessionToken) {
+          this.storage.setBuilderSessionToken(sessionToken);
+          return;
+        }
+
+        this.storage.clearBuilderSessionToken();
+      },
+    );
     this.tooltipRuntime = new TooltipRuntime(config.zIndex);
 
     if (config.autoTrackNavigation !== false) {
@@ -144,9 +156,16 @@ export class GuidoraBrowserClient implements GuidoraClient {
       return this.builderRuntime.getSession();
     }
 
-    const sessionToken = readQueryParam(BUILDER_QUERY_PARAM);
+    const querySessionToken = readQueryParam(BUILDER_QUERY_PARAM).trim();
+    const storedSessionToken = this.storage.getBuilderSessionToken();
+    const sessionToken = querySessionToken || storedSessionToken;
+
     if (!sessionToken) {
       return null;
+    }
+
+    if (querySessionToken && querySessionToken !== storedSessionToken) {
+      this.storage.setBuilderSessionToken(querySessionToken);
     }
 
     if (!this.builderBootstrapPromise) {
@@ -157,9 +176,38 @@ export class GuidoraBrowserClient implements GuidoraClient {
       return await this.builderBootstrapPromise;
     } catch (error) {
       this.builderBootstrapPromise = null;
+      this.storage.clearBuilderSessionToken();
       this.handleError(error as Error);
       return null;
     }
+  }
+
+  private getOrderedSteps(flow: SdkFlow) {
+    return [...flow.steps].sort((left, right) => left.step_order - right.step_order);
+  }
+
+  private resolveActiveStep(flow: SdkFlow, currentStepOrder: number) {
+    const orderedSteps = this.getOrderedSteps(flow);
+    if (!orderedSteps.length) {
+      return null;
+    }
+
+    return (
+      orderedSteps.find((step) => step.step_order >= currentStepOrder) ??
+      orderedSteps[orderedSteps.length - 1] ??
+      null
+    );
+  }
+
+  private routeToStepIfNeeded(step: SdkFlowStep) {
+    const targetPath = normalizePath(step.page_path || window.location.pathname);
+    if (targetPath === normalizePath(window.location.pathname)) {
+      return false;
+    }
+
+    this.tooltipRuntime.hide();
+    window.location.assign(targetPath);
+    return true;
   }
 
   private createBuilderBootstrapResponse(
@@ -190,17 +238,27 @@ export class GuidoraBrowserClient implements GuidoraClient {
 
   private async startFlow(flow: SdkFlow, progress: SdkFlowProgress, options: { emitFlowStarted: boolean }) {
     const currentStepOrder = progress.current_step_order || flow.steps[0]?.step_order || 1;
+    const activeStep = this.resolveActiveStep(flow, currentStepOrder);
+
+    if (!activeStep) {
+      this.tooltipRuntime.hide();
+      return;
+    }
 
     if (options.emitFlowStarted) {
       await this.safeTrack("flow_started", {
         flowSlug: flow.slug,
-        stepOrder: currentStepOrder,
+        stepOrder: activeStep.step_order,
       });
+    }
+
+    if (this.routeToStepIfNeeded(activeStep)) {
+      return;
     }
 
     this.config.onFlowStart?.(flow);
 
-    await this.tooltipRuntime.start(flow, currentStepOrder, {
+    await this.tooltipRuntime.start(flow, activeStep.step_order, {
       onStepViewed: async (step) => {
         await this.safeTrack("step_viewed", {
           flowSlug: flow.slug,
