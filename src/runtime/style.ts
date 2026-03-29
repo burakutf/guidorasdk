@@ -127,6 +127,211 @@ export function injectGuidoraStyles(zIndex: number) {
       color: #2E3A59;
     }
 
+    .guidora-sdk-assistant-shell {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: ${zIndex + 1};
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .guidora-sdk-assistant-launcher,
+    .guidora-sdk-assistant-panel,
+    .guidora-sdk-assistant-chip,
+    .guidora-sdk-assistant-close,
+    .guidora-sdk-assistant-submit {
+      pointer-events: auto;
+    }
+
+    .guidora-sdk-assistant-launcher {
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #172033 0%, #3B6EE8 100%);
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1;
+      padding: 14px 18px;
+      box-shadow: 0 20px 40px rgba(23, 32, 51, 0.24);
+      cursor: pointer;
+    }
+
+    .guidora-sdk-assistant-panel {
+      width: min(380px, calc(100vw - 24px));
+      border-radius: 28px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 28px 80px rgba(15, 23, 42, 0.18);
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .guidora-sdk-assistant-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .guidora-sdk-assistant-header-copy {
+      display: grid;
+      gap: 6px;
+    }
+
+    .guidora-sdk-assistant-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #3B6EE8;
+    }
+
+    .guidora-sdk-assistant-title {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.15;
+      color: #172033;
+    }
+
+    .guidora-sdk-assistant-subtitle {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #5B6478;
+    }
+
+    .guidora-sdk-assistant-close {
+      border: 0;
+      background: #F3F4F6;
+      color: #172033;
+      border-radius: 999px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .guidora-sdk-assistant-transcript {
+      display: grid;
+      gap: 10px;
+      max-height: min(42vh, 380px);
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .guidora-sdk-assistant-message {
+      display: grid;
+      gap: 8px;
+      border-radius: 20px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .guidora-sdk-assistant-message-assistant {
+      background: #F8FAFC;
+      color: #25324A;
+      border: 1px solid rgba(191, 199, 214, 0.52);
+    }
+
+    .guidora-sdk-assistant-message-user {
+      background: rgba(59, 110, 232, 0.1);
+      color: #17305F;
+      border: 1px solid rgba(59, 110, 232, 0.16);
+    }
+
+    .guidora-sdk-assistant-message[data-tone="success"] {
+      background: rgba(32, 169, 100, 0.1);
+      border-color: rgba(32, 169, 100, 0.22);
+    }
+
+    .guidora-sdk-assistant-message[data-tone="warning"] {
+      background: rgba(245, 158, 11, 0.14);
+      border-color: rgba(245, 158, 11, 0.24);
+    }
+
+    .guidora-sdk-assistant-draft {
+      display: grid;
+      gap: 4px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(191, 199, 214, 0.48);
+      color: #42506A;
+    }
+
+    .guidora-sdk-assistant-draft strong {
+      font-size: 12px;
+      color: #172033;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .guidora-sdk-assistant-suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .guidora-sdk-assistant-chip {
+      border: 1px solid rgba(191, 199, 214, 0.72);
+      background: #FFFFFF;
+      color: #25324A;
+      border-radius: 999px;
+      padding: 9px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .guidora-sdk-assistant-form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .guidora-sdk-assistant-input {
+      width: 100%;
+      resize: vertical;
+      min-height: 86px;
+      border-radius: 18px;
+      border: 1px solid rgba(191, 199, 214, 0.78);
+      background: #FFFFFF;
+      color: #172033;
+      padding: 12px 14px;
+      font: inherit;
+    }
+
+    .guidora-sdk-assistant-submit {
+      justify-self: end;
+    }
+
+    .guidora-sdk-assistant-status {
+      font-size: 12px;
+      font-weight: 600;
+      color: #5B6478;
+    }
+
+    @media (max-width: 720px) {
+      .guidora-sdk-assistant-shell {
+        right: 12px;
+        left: 12px;
+        bottom: 12px;
+        align-items: stretch;
+      }
+
+      .guidora-sdk-assistant-launcher {
+        align-self: flex-end;
+      }
+
+      .guidora-sdk-assistant-panel {
+        width: 100%;
+      }
+    }
+
     .guidora-sdk-builder-root {
       position: fixed;
       inset: 0;
@@ -142,28 +347,36 @@ export function injectGuidoraStyles(zIndex: number) {
 
     .guidora-sdk-builder-highlight {
       position: fixed;
-      border-radius: 18px;
-      background: rgba(59, 110, 232, 0.06);
-      border: 2px solid rgba(59, 110, 232, 0.42);
-      box-shadow: 0 18px 52px rgba(15, 23, 42, 0.12);
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.04);
+      border: 2px solid rgba(23, 32, 51, 0.28);
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.48);
       pointer-events: none;
       transition: all 120ms ease;
     }
 
     .guidora-sdk-builder-highlight-hover {
-      border-color: rgba(59, 110, 232, 0.42);
-      background: rgba(59, 110, 232, 0.06);
+      border-color: rgba(23, 32, 51, 0.7);
+      background: rgba(255, 255, 255, 0.04);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.62);
+    }
+
+    .guidora-sdk-builder-highlight-step {
+      border-color: rgba(59, 110, 232, 0.88);
+      background: rgba(59, 110, 232, 0.1);
+      box-shadow: 0 0 0 3px rgba(59, 110, 232, 0.14), 0 20px 44px rgba(15, 23, 42, 0.18);
     }
 
     .guidora-sdk-builder-highlight-pick {
-      border-color: rgba(32, 169, 100, 0.58);
-      background: rgba(32, 169, 100, 0.08);
+      border-color: rgba(32, 169, 100, 0.92);
+      background: rgba(32, 169, 100, 0.12);
+      box-shadow: 0 0 0 4px rgba(32, 169, 100, 0.16), 0 20px 44px rgba(15, 23, 42, 0.18);
     }
 
     .guidora-sdk-builder-highlight-edit {
-      border-color: rgba(26, 78, 216, 0.65);
-      background: rgba(26, 78, 216, 0.08);
-      box-shadow: 0 24px 60px rgba(26, 78, 216, 0.16);
+      border-color: rgba(26, 78, 216, 0.96);
+      background: rgba(26, 78, 216, 0.16);
+      box-shadow: 0 0 0 4px rgba(26, 78, 216, 0.18), 0 24px 60px rgba(26, 78, 216, 0.24);
     }
 
     .guidora-sdk-builder-highlight-badge {
@@ -178,6 +391,7 @@ export function injectGuidoraStyles(zIndex: number) {
       letter-spacing: 0.04em;
       text-transform: uppercase;
       padding: 8px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
       pointer-events: none;
       white-space: nowrap;
       box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
@@ -192,23 +406,26 @@ export function injectGuidoraStyles(zIndex: number) {
       flex-direction: column;
       gap: 18px;
       padding: 22px 18px 18px;
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(18px);
+      background: rgba(249, 250, 252, 0.98);
+      backdrop-filter: blur(12px);
       pointer-events: auto;
       overflow: hidden;
+      min-height: 0;
     }
 
     .guidora-sdk-builder-rail-left {
       left: 0;
-      border-right: 1px solid rgba(215, 220, 229, 0.92);
-      box-shadow: 18px 0 48px rgba(15, 23, 42, 0.06);
+      border-right: 1px solid rgba(191, 199, 214, 0.98);
+      box-shadow: 18px 0 48px rgba(15, 23, 42, 0.08);
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
     .guidora-sdk-builder-rail-right {
       right: 0;
       width: 324px;
-      border-left: 1px solid rgba(215, 220, 229, 0.92);
-      box-shadow: -18px 0 48px rgba(15, 23, 42, 0.06);
+      border-left: 1px solid rgba(191, 199, 214, 0.98);
+      box-shadow: -18px 0 48px rgba(15, 23, 42, 0.08);
     }
 
     .guidora-sdk-builder-rail-header {
@@ -252,8 +469,9 @@ export function injectGuidoraStyles(zIndex: number) {
       gap: 12px;
       padding: 14px;
       border-radius: 22px;
-      border: 1px solid rgba(215, 220, 229, 0.92);
-      background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 100%);
+      border: 1px solid rgba(183, 193, 208, 0.96);
+      background: #FFFFFF;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
     }
 
     .guidora-sdk-builder-flow-editor-header {
@@ -300,8 +518,71 @@ export function injectGuidoraStyles(zIndex: number) {
       flex-wrap: wrap;
     }
 
+    .guidora-sdk-builder-flow-summary {
+      border-radius: 16px;
+      background: #F5F8FD;
+      color: #42506A;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.4;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 10px 12px;
+    }
+
     .guidora-sdk-builder-flow-editor-actions .guidora-sdk-builder-button {
       flex: 1;
+    }
+
+    .guidora-sdk-builder-checkbox-field {
+      display: flex;
+      flex-direction: column;
+      border-radius: 16px;
+      border: 1px solid rgba(215, 220, 229, 0.92);
+      background: #FBFCFE;
+      padding: 10px 12px;
+      min-height: 44px;
+      justify-content: center;
+    }
+
+    .guidora-sdk-builder-checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .guidora-sdk-builder-checkbox-input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: #2563EB;
+      flex-shrink: 0;
+    }
+
+    .guidora-sdk-builder-checkbox-title {
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.4;
+      color: #172033;
+      flex: 1;
+    }
+
+    .guidora-sdk-builder-checkbox-hint {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      border-radius: 999px;
+      background: #FFFFFF;
+      color: #64748B;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+      padding: 0;
+      cursor: help;
+      flex-shrink: 0;
     }
 
     .guidora-sdk-builder-button {
@@ -328,12 +609,12 @@ export function injectGuidoraStyles(zIndex: number) {
     }
 
     .guidora-sdk-builder-button-primary {
-      background: #172033;
+      background: #111827;
       color: #FFFFFF;
     }
 
     .guidora-sdk-builder-button-secondary {
-      background: #EEF2F8;
+      background: #E7ECF5;
       color: #25324A;
     }
 
@@ -354,14 +635,15 @@ export function injectGuidoraStyles(zIndex: number) {
     }
 
     .guidora-sdk-builder-flow-list {
-      flex: 1;
+      flex: 0 0 auto;
+      overflow: visible;
     }
 
     .guidora-sdk-builder-flow-card,
     .guidora-sdk-builder-step-card {
       width: 100%;
       appearance: none;
-      border: 1px solid rgba(215, 220, 229, 0.92);
+      border: 1px solid rgba(191, 199, 214, 0.96);
       background: #FFFFFF;
       color: #172033;
       text-align: left;
@@ -369,26 +651,26 @@ export function injectGuidoraStyles(zIndex: number) {
     }
 
     .guidora-sdk-builder-flow-card {
-      border-radius: 20px;
+      border-radius: 16px;
       padding: 14px 14px 13px;
       display: flex;
       flex-direction: column;
       gap: 6px;
-      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease, transform 160ms ease;
     }
 
     .guidora-sdk-builder-flow-card:hover,
     .guidora-sdk-builder-step-card:hover {
-      border-color: rgba(23, 32, 51, 0.22);
-      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+      border-color: rgba(23, 32, 51, 0.68);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
       transform: translateY(-1px);
     }
 
     .guidora-sdk-builder-flow-card-active {
-      background: #172033;
-      border-color: #172033;
+      background: #111827;
+      border-color: #111827;
       color: #F8FAFC;
-      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
+      box-shadow: 0 22px 46px rgba(15, 23, 42, 0.22);
     }
 
     .guidora-sdk-builder-flow-card-title {
@@ -423,13 +705,25 @@ export function injectGuidoraStyles(zIndex: number) {
     }
 
     .guidora-sdk-builder-action-card {
-      border-radius: 20px;
+      border: 1px solid rgba(191, 199, 214, 0.96);
+      border-radius: 16px;
       padding: 14px;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 100%);
-      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+      background: #FFFFFF;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .guidora-sdk-builder-action-card-active {
+      border-color: #111827;
+      background: #111827;
+      box-shadow: 0 20px 42px rgba(15, 23, 42, 0.22);
+    }
+
+    .guidora-sdk-builder-action-card-active .guidora-sdk-builder-action-title,
+    .guidora-sdk-builder-action-card-active .guidora-sdk-builder-action-copy {
+      color: #F8FAFC;
     }
 
     .guidora-sdk-builder-action-title {
@@ -446,9 +740,14 @@ export function injectGuidoraStyles(zIndex: number) {
     }
 
     .guidora-sdk-builder-step-note {
+      border-radius: 16px;
+      border: 1px solid rgba(191, 199, 214, 0.96);
+      background: #F3F6FC;
       font-size: 12px;
+      font-weight: 700;
       line-height: 1.55;
-      color: #6B7280;
+      color: #25324A;
+      padding: 12px 14px;
     }
 
     .guidora-sdk-builder-step-list {
@@ -456,7 +755,9 @@ export function injectGuidoraStyles(zIndex: number) {
     }
 
     .guidora-sdk-builder-step-card {
-      border-radius: 18px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
       padding: 12px 12px 11px;
       display: flex;
       flex-direction: column;
@@ -465,9 +766,15 @@ export function injectGuidoraStyles(zIndex: number) {
     }
 
     .guidora-sdk-builder-step-card-active {
-      border-color: rgba(23, 32, 51, 0.25);
-      background: #F8FAFF;
-      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.1);
+      border-color: #111827;
+      background: linear-gradient(180deg, #FFFFFF 0%, #EDF4FF 100%);
+      box-shadow: 0 0 0 2px rgba(59, 110, 232, 0.14), 0 20px 42px rgba(15, 23, 42, 0.16);
+    }
+
+    .guidora-sdk-builder-step-card-hovered {
+      border-color: rgba(59, 110, 232, 0.76);
+      background: #F7FAFF;
+      box-shadow: 0 16px 32px rgba(59, 110, 232, 0.08);
     }
 
     .guidora-sdk-builder-step-card-offpage {
@@ -490,6 +797,14 @@ export function injectGuidoraStyles(zIndex: number) {
       gap: 10px;
     }
 
+    .guidora-sdk-builder-step-row-meta {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     .guidora-sdk-builder-step-order {
       display: inline-flex;
       align-items: center;
@@ -505,13 +820,39 @@ export function injectGuidoraStyles(zIndex: number) {
       flex-shrink: 0;
     }
 
+    .guidora-sdk-builder-step-card-active .guidora-sdk-builder-step-order {
+      background: #111827;
+      color: #F8FAFC;
+    }
+
     .guidora-sdk-builder-step-path {
       font-size: 11px;
       font-weight: 700;
       line-height: 1.4;
-      color: #6B7280;
+      color: #4B5563;
       letter-spacing: 0.04em;
       text-transform: uppercase;
+    }
+
+    .guidora-sdk-builder-step-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .guidora-sdk-builder-step-chip-active {
+      background: rgba(59, 110, 232, 0.14);
+      color: #1A4ED8;
+    }
+
+    .guidora-sdk-builder-step-chip-hovered {
+      background: rgba(17, 24, 39, 0.08);
+      color: #111827;
     }
 
     .guidora-sdk-builder-step-row-title {
@@ -519,6 +860,10 @@ export function injectGuidoraStyles(zIndex: number) {
       font-weight: 700;
       line-height: 1.45;
       color: #172033;
+    }
+
+    .guidora-sdk-builder-step-card-active .guidora-sdk-builder-step-row-title {
+      color: #0F172A;
     }
 
     .guidora-sdk-builder-empty-state {
@@ -533,9 +878,10 @@ export function injectGuidoraStyles(zIndex: number) {
 
     .guidora-sdk-builder-status {
       border-radius: 18px;
-      background: #F3F6FC;
-      color: #44506A;
+      background: #EAF0FA;
+      color: #25324A;
       font-size: 12px;
+      font-weight: 700;
       line-height: 1.55;
       padding: 12px 14px;
       margin-top: auto;
@@ -553,13 +899,55 @@ export function injectGuidoraStyles(zIndex: number) {
       flex-direction: column;
       gap: 12px;
       padding: 18px;
-      border-radius: 26px;
-      border: 1px solid rgba(215, 220, 229, 0.92);
-      background: rgba(255, 255, 255, 0.98);
+      border-radius: 20px;
+      border: 1px solid rgba(183, 193, 208, 0.98);
+      background: rgba(255, 255, 255, 0.99);
       color: #172033;
-      box-shadow: 0 28px 72px rgba(15, 23, 42, 0.18);
-      backdrop-filter: blur(18px);
+      box-shadow: 0 30px 76px rgba(15, 23, 42, 0.22);
+      backdrop-filter: blur(12px);
       pointer-events: auto;
+    }
+
+    .guidora-sdk-builder-preview {
+      position: fixed;
+      width: min(280px, calc(100vw - 32px));
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(17, 24, 39, 0.94);
+      background: rgba(17, 24, 39, 0.98);
+      color: #F8FAFC;
+      box-shadow: 0 28px 64px rgba(15, 23, 42, 0.28);
+      pointer-events: none;
+    }
+
+    .guidora-sdk-builder-preview-chip {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      border-radius: 999px;
+      background: rgba(59, 110, 232, 0.16);
+      color: #BFDBFE;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 6px 9px;
+    }
+
+    .guidora-sdk-builder-preview-title {
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.35;
+      color: #FFFFFF;
+    }
+
+    .guidora-sdk-builder-preview-body {
+      font-size: 13px;
+      line-height: 1.6;
+      color: rgba(248, 250, 252, 0.82);
     }
 
     .guidora-sdk-builder-editor-chip {
@@ -689,6 +1077,10 @@ export function injectGuidoraStyles(zIndex: number) {
 
       .guidora-sdk-builder-editor {
         width: min(360px, calc(100vw - 24px));
+      }
+
+      .guidora-sdk-builder-preview {
+        width: min(280px, calc(100vw - 24px));
       }
     }
 

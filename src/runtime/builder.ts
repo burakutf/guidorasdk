@@ -10,17 +10,24 @@ import type {
   SdkFlowStep,
   TooltipPosition,
 } from "../types";
-import { escapeCssIdentifier, normalizePath, removeQueryParam } from "../utils";
+import {
+  escapeCssIdentifier,
+  ensureElementInViewport,
+  normalizePath,
+  readQueryParam,
+  removeQueryParam,
+} from "../utils";
 import { injectGuidoraStyles } from "./style";
 
 const BUILDER_QUERY_PARAM = "guidora_builder";
+const BUILDER_STEP_QUERY_PARAM = "guidora_builder_step";
 const HEARTBEAT_INTERVAL = 15000;
 const BUILDER_ROOT_SELECTOR = "[data-guidora-builder-root='true']";
 const LEFT_RAIL_WIDTH = 268;
 const RIGHT_RAIL_WIDTH = 324;
 const MOBILE_BREAKPOINT = 1100;
 
-type HighlightTone = "hover" | "pick" | "edit";
+type HighlightTone = "hover" | "pick" | "edit" | "step";
 type BuilderDraftMode = "highlight" | "popup";
 
 type BuilderDraft = {
@@ -38,6 +45,9 @@ type BuilderFlowForm = {
   flowId: number;
   name: string;
   entryPath: string;
+  autoStart: boolean;
+  triggerOncePerVisitor: boolean;
+  aiEnabled: boolean;
 };
 
 type BuilderRuntimeDom = {
@@ -48,6 +58,10 @@ type BuilderRuntimeDom = {
   flowStatusBadge: HTMLSpanElement;
   flowNameInput: HTMLInputElement;
   flowPathInput: HTMLInputElement;
+  flowAutoStartInput: HTMLInputElement;
+  flowOnceInput: HTMLInputElement;
+  flowAiInput: HTMLInputElement;
+  flowTriggerSummary: HTMLDivElement;
   flowSaveButton: HTMLButtonElement;
   flowDeleteButton: HTMLButtonElement;
   activeFlowName: HTMLDivElement;
@@ -55,10 +69,18 @@ type BuilderRuntimeDom = {
   newFlowButton: HTMLButtonElement;
   newPopupFlowButton: HTMLButtonElement;
   addStepButton: HTMLButtonElement;
+  addStepTitle: HTMLSpanElement;
+  addStepCopy: HTMLSpanElement;
   addPopupButton: HTMLButtonElement;
+  addPopupTitle: HTMLSpanElement;
+  addPopupCopy: HTMLSpanElement;
   stepList: HTMLDivElement;
   stepNote: HTMLDivElement;
   statusValue: HTMLDivElement;
+  preview: HTMLDivElement;
+  previewChip: HTMLSpanElement;
+  previewTitle: HTMLDivElement;
+  previewBody: HTMLDivElement;
   editor: HTMLDivElement;
   editorChip: HTMLSpanElement;
   editorHeading: HTMLDivElement;
@@ -71,6 +93,13 @@ type BuilderRuntimeDom = {
   deleteButton: HTMLButtonElement;
   cancelButton: HTMLButtonElement;
   saveButton: HTMLButtonElement;
+};
+
+type PositionedBox = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
 };
 
 function isUniqueSelector(selector: string) {
@@ -377,6 +406,10 @@ export class BuilderRuntime {
     }
 
     this.startHeartbeat();
+    if (this.consumeRequestedStepSelection()) {
+      return response;
+    }
+
     const stepCount = this.getSortedSteps().length;
     this.setStatus(
       stepCount
@@ -402,6 +435,9 @@ export class BuilderRuntime {
 
     this.refreshUi();
     this.refreshCanvas();
+    if (this.consumeRequestedStepSelection()) {
+      return;
+    }
     this.setStatus(
       "Page updated. Continue building on this screen or switch to another saved step.",
     );
@@ -530,6 +566,61 @@ export class BuilderRuntime {
     });
     flowPathField.field.append(flowPathInput);
 
+    const flowBehaviorGrid = document.createElement("div");
+    flowBehaviorGrid.className = "guidora-sdk-builder-grid";
+
+    const flowAutoStartField = this.createCheckboxField(
+      "Page visit",
+      "Start automatically when a visitor lands on the entry path.",
+    );
+    const flowAutoStartInput = flowAutoStartField.input;
+    flowAutoStartInput.addEventListener("change", () => {
+      const flowForm = this.getFlowForm();
+      if (!flowForm) {
+        return;
+      }
+      flowForm.autoStart = flowAutoStartInput.checked;
+      this.syncFlowMeta();
+    });
+
+    const flowOnceField = this.createCheckboxField(
+      "First visit only",
+      "Keep this flow from reopening after completion or dismissal.",
+    );
+    const flowOnceInput = flowOnceField.input;
+    flowOnceInput.addEventListener("change", () => {
+      const flowForm = this.getFlowForm();
+      if (!flowForm) {
+        return;
+      }
+      flowForm.triggerOncePerVisitor = flowOnceInput.checked;
+      this.syncFlowMeta();
+    });
+
+    const flowAiField = this.createCheckboxField(
+      "AI match",
+      "Also let resolve-intent start this flow from product questions.",
+    );
+    const flowAiInput = flowAiField.input;
+    flowAiInput.addEventListener("change", () => {
+      const flowForm = this.getFlowForm();
+      if (!flowForm) {
+        return;
+      }
+      flowForm.aiEnabled = flowAiInput.checked;
+      this.syncFlowMeta();
+    });
+
+    flowBehaviorGrid.append(
+      flowAutoStartField.field,
+      flowOnceField.field,
+      flowAiField.field,
+    );
+
+    const flowTriggerSummary = document.createElement("div");
+    flowTriggerSummary.className = "guidora-sdk-builder-flow-summary";
+    flowTriggerSummary.textContent = "Trigger rules";
+
     const flowEditorActions = document.createElement("div");
     flowEditorActions.className = "guidora-sdk-builder-flow-editor-actions";
 
@@ -556,6 +647,8 @@ export class BuilderRuntime {
       flowEditorHeader,
       flowNameField.field,
       flowPathField.field,
+      flowBehaviorGrid,
+      flowTriggerSummary,
       flowEditorActions,
     );
 
@@ -602,11 +695,11 @@ export class BuilderRuntime {
 
     const addStepTitle = document.createElement("span");
     addStepTitle.className = "guidora-sdk-builder-action-title";
-    addStepTitle.textContent = "Add highlight";
+    addStepTitle.textContent = "Highlight element";
     const addStepCopy = document.createElement("span");
     addStepCopy.className = "guidora-sdk-builder-action-copy";
     addStepCopy.textContent =
-      "Pick a place on the site and attach a tooltip there.";
+      "Add step, then click an element on the page.";
     addStepButton.append(addStepTitle, addStepCopy);
 
     const addPopupButton = document.createElement("button");
@@ -618,11 +711,11 @@ export class BuilderRuntime {
 
     const addPopupTitle = document.createElement("span");
     addPopupTitle.className = "guidora-sdk-builder-action-title";
-    addPopupTitle.textContent = "Open trigger popup";
+    addPopupTitle.textContent = "Show popup (no element)";
     const addPopupCopy = document.createElement("span");
     addPopupCopy.className = "guidora-sdk-builder-action-copy";
     addPopupCopy.textContent =
-      "Show a page-open popup without selecting a specific element.";
+      "Use a page-open popup when no page element should be selected.";
     addPopupButton.append(addPopupTitle, addPopupCopy);
 
     actionDeck.append(addStepButton, addPopupButton);
@@ -639,6 +732,24 @@ export class BuilderRuntime {
     statusValue.textContent = "Canvas ready.";
 
     rightRail.append(rightHeader, actionDeck, stepNote, stepList, statusValue);
+
+    const preview = document.createElement("div");
+    preview.className =
+      "guidora-sdk-builder-preview guidora-sdk-builder-hidden";
+
+    const previewChip = document.createElement("span");
+    previewChip.className = "guidora-sdk-builder-preview-chip";
+    previewChip.textContent = "Live preview";
+
+    const previewTitle = document.createElement("div");
+    previewTitle.className = "guidora-sdk-builder-preview-title";
+    previewTitle.textContent = "Tooltip title";
+
+    const previewBody = document.createElement("div");
+    previewBody.className = "guidora-sdk-builder-preview-body";
+    previewBody.textContent = "Tooltip body preview appears here.";
+
+    preview.append(previewChip, previewTitle, previewBody);
 
     const editor = document.createElement("div");
     editor.className = "guidora-sdk-builder-editor guidora-sdk-builder-hidden";
@@ -666,6 +777,7 @@ export class BuilderRuntime {
       }
       this.draft.title = titleInput.value;
       this.syncEditor();
+      this.syncPreview();
     });
     titleField.field.append(titleInput);
 
@@ -678,6 +790,7 @@ export class BuilderRuntime {
         return;
       }
       this.draft.body = bodyInput.value;
+      this.syncPreview();
     });
     bodyField.field.append(bodyInput);
 
@@ -698,13 +811,14 @@ export class BuilderRuntime {
       }
       this.draft.position = positionSelect.value as TooltipPosition;
       this.positionEditor();
+      this.positionPreview();
     });
     positionField.field.append(positionSelect);
 
-    const advanceField = this.createField("Trigger");
+    const advanceField = this.createField("Advance step");
     const advanceSelect = document.createElement("select");
     advanceSelect.className = "guidora-sdk-builder-select";
-    this.appendOption(advanceSelect, "next_click", "Next button");
+    this.appendOption(advanceSelect, "next_click", "Next button click");
     this.appendOption(advanceSelect, "target_click", "Target click");
     this.appendOption(advanceSelect, "auto", "Auto advance");
     advanceSelect.addEventListener("change", () => {
@@ -784,7 +898,7 @@ export class BuilderRuntime {
       footer,
     );
 
-    root.append(highlight, highlightBadge, leftRail, rightRail, editor);
+    root.append(highlight, highlightBadge, leftRail, rightRail, preview, editor);
     document.body.append(root);
 
     this.dom = {
@@ -795,6 +909,10 @@ export class BuilderRuntime {
       flowStatusBadge,
       flowNameInput,
       flowPathInput,
+      flowAutoStartInput,
+      flowOnceInput,
+      flowAiInput,
+      flowTriggerSummary,
       flowSaveButton,
       flowDeleteButton,
       activeFlowName,
@@ -802,10 +920,18 @@ export class BuilderRuntime {
       newFlowButton,
       newPopupFlowButton,
       addStepButton,
+      addStepTitle,
+      addStepCopy,
       addPopupButton,
+      addPopupTitle,
+      addPopupCopy,
       stepList,
       stepNote,
       statusValue,
+      preview,
+      previewChip,
+      previewTitle,
+      previewBody,
       editor,
       editorChip,
       editorHeading,
@@ -831,6 +957,34 @@ export class BuilderRuntime {
     field.append(labelElement);
 
     return { field, labelElement };
+  }
+
+  private createCheckboxField(label: string, description: string) {
+    const field = document.createElement("label");
+    field.className = "guidora-sdk-builder-checkbox-field";
+
+    const row = document.createElement("span");
+    row.className = "guidora-sdk-builder-checkbox-row";
+
+    const input = document.createElement("input");
+    input.className = "guidora-sdk-builder-checkbox-input";
+    input.type = "checkbox";
+
+    const title = document.createElement("span");
+    title.className = "guidora-sdk-builder-checkbox-title";
+    title.textContent = label;
+
+    const hint = document.createElement("button");
+    hint.type = "button";
+    hint.className = "guidora-sdk-builder-checkbox-hint";
+    hint.textContent = "?";
+    hint.title = description;
+    hint.setAttribute("aria-label", description);
+
+    row.append(input, title, hint);
+
+    field.append(row);
+    return { field, input, hint };
   }
 
   private appendOption(
@@ -897,6 +1051,9 @@ export class BuilderRuntime {
       flowId: activeFlow.id,
       name: activeFlow.name,
       entryPath: this.getActiveFlowEntryPath(activeFlow),
+      autoStart: activeFlow.page_auto_start,
+      triggerOncePerVisitor: activeFlow.trigger_once_per_visitor,
+      aiEnabled: activeFlow.ai_enabled,
     };
   }
 
@@ -915,8 +1072,129 @@ export class BuilderRuntime {
     return (
       flowForm.name.trim() !== activeFlow.name ||
       normalizePath(flowForm.entryPath || "/") !==
-        this.getActiveFlowEntryPath(activeFlow)
+        this.getActiveFlowEntryPath(activeFlow) ||
+      flowForm.autoStart !== activeFlow.page_auto_start ||
+      flowForm.triggerOncePerVisitor !== activeFlow.trigger_once_per_visitor ||
+      flowForm.aiEnabled !== activeFlow.ai_enabled
     );
+  }
+
+  private describeFlowTriggers(flow: SdkFlow, flowForm: BuilderFlowForm | null) {
+    const entryPath = normalizePath(
+      flowForm?.entryPath ?? this.getActiveFlowEntryPath(flow),
+    );
+    const autoStart = flowForm?.autoStart ?? flow.page_auto_start;
+    const triggerOnce =
+      flowForm?.triggerOncePerVisitor ?? flow.trigger_once_per_visitor;
+    const aiEnabled = flowForm?.aiEnabled ?? flow.ai_enabled;
+
+    return [
+      autoStart
+        ? `Page visit on ${entryPath}`
+        : `No page auto-start on ${entryPath}`,
+      triggerOnce ? "first visit only" : "repeat visits allowed",
+      aiEnabled ? "AI match on" : "AI match off",
+    ].join(" • ");
+  }
+
+  private getVisibleEditorRect() {
+    if (!this.dom) {
+      return null;
+    }
+
+    if (this.dom.editor.classList.contains("guidora-sdk-builder-hidden")) {
+      return null;
+    }
+
+    const rect = this.dom.editor.getBoundingClientRect();
+    if (!rect.width || !rect.height) {
+      return null;
+    }
+
+    return rect;
+  }
+
+  private makePositionedBox(left: number, top: number, width: number, height: number): PositionedBox {
+    return { left, top, width, height };
+  }
+
+  private overlapsRect(candidate: PositionedBox, rect: DOMRect | null, gap = 16) {
+    if (!rect) {
+      return false;
+    }
+
+    return !(
+      candidate.left + candidate.width + gap <= rect.left ||
+      candidate.left >= rect.right + gap ||
+      candidate.top + candidate.height + gap <= rect.top ||
+      candidate.top >= rect.bottom + gap
+    );
+  }
+
+  private resolvePreviewPlacement(
+    width: number,
+    height: number,
+    minLeft: number,
+    maxLeft: number,
+    minTop: number,
+    maxTop: number,
+  ) {
+    const anchor = this.getDraftAnchorElement();
+    const editorRect = this.getVisibleEditorRect();
+    const placements: TooltipPosition[] = ["bottom", "top", "right", "left", "center"];
+    const clampLeft = (value: number) =>
+      clamp(value, minLeft, Math.max(minLeft, maxLeft));
+    const clampTop = (value: number) =>
+      clamp(value, minTop, Math.max(minTop, maxTop));
+
+    const buildCandidate = (placement: TooltipPosition) => {
+      if (!anchor || this.draft?.mode === "popup") {
+        return this.makePositionedBox(
+          clampLeft((window.innerWidth - width) / 2),
+          clampTop(72),
+          width,
+          height,
+        );
+      }
+
+      const rect = anchor.getBoundingClientRect();
+      let left = rect.left + rect.width / 2 - width / 2;
+      let top = rect.bottom + 18;
+
+      switch (placement) {
+        case "top":
+          top = rect.top - height - 18;
+          break;
+        case "right":
+          left = rect.right + 18;
+          top = rect.top + rect.height / 2 - height / 2;
+          break;
+        case "left":
+          left = rect.left - width - 18;
+          top = rect.top + rect.height / 2 - height / 2;
+          break;
+        case "center":
+          top = rect.top + rect.height / 2 - height / 2;
+          break;
+        default:
+          break;
+      }
+
+      return this.makePositionedBox(clampLeft(left), clampTop(top), width, height);
+    };
+
+    for (const placement of placements) {
+      const candidate = buildCandidate(placement);
+      const anchorRect = anchor?.getBoundingClientRect() ?? null;
+      if (
+        !this.overlapsRect(candidate, anchorRect, 12) &&
+        !this.overlapsRect(candidate, editorRect, 18)
+      ) {
+        return candidate;
+      }
+    }
+
+    return buildCandidate(this.draft?.position ?? "bottom");
   }
 
   private canDeleteActiveFlow() {
@@ -987,6 +1265,7 @@ export class BuilderRuntime {
     this.renderStepList();
     this.syncFlowMeta();
     this.syncEditor();
+    this.syncPreview();
     this.refreshCanvas();
   }
 
@@ -1062,20 +1341,21 @@ export class BuilderRuntime {
       const empty = document.createElement("div");
       empty.className = "guidora-sdk-builder-empty-state";
       empty.textContent =
-        "Use Add highlight or Open trigger popup to start this flow.";
+        "Use Highlight element or Show popup (no element) to start this flow.";
       this.dom.stepList.append(empty);
       return;
     }
 
     for (const step of steps) {
+      const isActiveStep = step.id === this.draft?.stepId;
+      const isHoveredStep = step.id === this.hoveredStepId;
       const card = document.createElement("button");
       card.type = "button";
       card.draggable = true;
       card.className = [
         "guidora-sdk-builder-step-card",
-        step.id === this.draft?.stepId
-          ? "guidora-sdk-builder-step-card-active"
-          : "",
+        isActiveStep ? "guidora-sdk-builder-step-card-active" : "",
+        isHoveredStep ? "guidora-sdk-builder-step-card-hovered" : "",
         normalizePath(step.page_path || "/") === currentPage
           ? ""
           : "guidora-sdk-builder-step-card-offpage",
@@ -1084,7 +1364,7 @@ export class BuilderRuntime {
         .join(" ");
       card.dataset.stepId = String(step.id);
       card.addEventListener("click", () => {
-        this.openEditorForStep(step.id);
+        this.focusStep(step.id, { navigateToPage: true });
       });
       card.addEventListener("dragstart", (event) => {
         this.draggingStepId = step.id;
@@ -1126,11 +1406,29 @@ export class BuilderRuntime {
         ? "Page open"
         : normalizePath(step.page_path || "/");
 
+      const meta = document.createElement("div");
+      meta.className = "guidora-sdk-builder-step-row-meta";
+      meta.append(path);
+
+      if (isActiveStep) {
+        const activeChip = document.createElement("span");
+        activeChip.className =
+          "guidora-sdk-builder-step-chip guidora-sdk-builder-step-chip-active";
+        activeChip.textContent = "Active";
+        meta.append(activeChip);
+      } else if (isHoveredStep) {
+        const hoveredChip = document.createElement("span");
+        hoveredChip.className =
+          "guidora-sdk-builder-step-chip guidora-sdk-builder-step-chip-hovered";
+        hoveredChip.textContent = "Hover";
+        meta.append(hoveredChip);
+      }
+
       const title = document.createElement("div");
       title.className = "guidora-sdk-builder-step-row-title";
       title.textContent = getStepTitle(step);
 
-      top.append(order, path);
+      top.append(order, meta);
       card.append(top, title);
       this.dom.stepList.append(card);
     }
@@ -1142,6 +1440,7 @@ export class BuilderRuntime {
     }
 
     const activeFlow = this.getActiveFlow();
+    const draft = this.draft;
     this.syncFlowForm();
     const flowForm = this.flowForm;
     const isBusy =
@@ -1158,6 +1457,9 @@ export class BuilderRuntime {
     this.dom.addPopupButton.disabled = !activeFlow || isBusy;
     this.dom.flowNameInput.disabled = !activeFlow || isBusy;
     this.dom.flowPathInput.disabled = !activeFlow || isBusy;
+    this.dom.flowAutoStartInput.disabled = !activeFlow || isBusy;
+    this.dom.flowOnceInput.disabled = !activeFlow || isBusy;
+    this.dom.flowAiInput.disabled = !activeFlow || isBusy;
     this.dom.flowSaveButton.disabled =
       !activeFlow || isBusy || !this.hasPendingFlowChanges();
     this.dom.flowDeleteButton.disabled =
@@ -1176,17 +1478,32 @@ export class BuilderRuntime {
       ? "Deleting..."
       : "Delete flow";
 
-    const addStepTitle = this.dom.addStepButton.querySelector(
-      ".guidora-sdk-builder-action-title",
+    const isCreatingHighlightStep =
+      this.isPicking &&
+      draft?.stepId === null &&
+      draft?.mode === "highlight";
+    const isRecapturingStep =
+      this.isPicking &&
+      draft?.stepId !== null &&
+      draft?.mode === "highlight";
+
+    this.dom.addStepButton.classList.toggle(
+      "guidora-sdk-builder-action-card-active",
+      isCreatingHighlightStep || isRecapturingStep,
     );
-    if (addStepTitle) {
-      addStepTitle.textContent =
-        this.isPicking &&
-        this.draft?.stepId === null &&
-        this.draft.mode === "highlight"
-          ? "Cancel selection"
-          : "Add highlight";
-    }
+    this.dom.addStepTitle.textContent = isCreatingHighlightStep
+      ? "Click element on page"
+      : isRecapturingStep
+        ? "Pick a new element"
+        : "Highlight element";
+    this.dom.addStepCopy.textContent = isCreatingHighlightStep
+      ? "Capture is active. Click any page element to attach this step."
+      : isRecapturingStep
+        ? "Capture is active. Click the replacement element on the page."
+        : "Add step, then click an element on the page.";
+    this.dom.addPopupTitle.textContent = "Show popup (no element)";
+    this.dom.addPopupCopy.textContent =
+      "Use a page-open popup when no page element should be selected.";
 
     if (!activeFlow) {
       this.dom.activeFlowName.textContent = "No flow selected";
@@ -1195,11 +1512,17 @@ export class BuilderRuntime {
       this.dom.flowStatusBadge.className = "guidora-sdk-builder-flow-status";
       this.dom.flowNameInput.value = "";
       this.dom.flowPathInput.value = "";
+      this.dom.flowAutoStartInput.checked = false;
+      this.dom.flowOnceInput.checked = false;
+      this.dom.flowAiInput.checked = false;
+      this.dom.flowTriggerSummary.textContent =
+        "Select a flow to configure when it should start.";
+      this.dom.stepNote.textContent = "Choose a flow, then start building on the page.";
       return;
     }
 
     this.dom.activeFlowName.textContent = activeFlow.name;
-    this.dom.activeFlowMeta.textContent = `${formatFlowTypeLabel(activeFlow.type)} • ${formatFlowStatusLabel(activeFlow.status)} • ${this.getActiveFlowEntryPath(activeFlow)}`;
+    this.dom.activeFlowMeta.textContent = `${formatFlowTypeLabel(activeFlow.type)} • ${formatFlowStatusLabel(activeFlow.status)} • ${this.describeFlowTriggers(activeFlow, flowForm)}`;
     this.dom.flowStatusBadge.textContent = formatFlowStatusLabel(
       activeFlow.status,
     );
@@ -1212,6 +1535,22 @@ export class BuilderRuntime {
     this.dom.flowNameInput.value = flowForm?.name ?? activeFlow.name;
     this.dom.flowPathInput.value =
       flowForm?.entryPath ?? this.getActiveFlowEntryPath(activeFlow);
+    this.dom.flowAutoStartInput.checked =
+      flowForm?.autoStart ?? activeFlow.page_auto_start;
+    this.dom.flowOnceInput.checked =
+      flowForm?.triggerOncePerVisitor ?? activeFlow.trigger_once_per_visitor;
+    this.dom.flowAiInput.checked =
+      flowForm?.aiEnabled ?? activeFlow.ai_enabled;
+    this.dom.flowTriggerSummary.textContent = this.describeFlowTriggers(
+      activeFlow,
+      flowForm,
+    );
+
+    if (isCreatingHighlightStep) {
+      this.dom.stepNote.textContent = "Add step -> Click element on page";
+    } else if (isRecapturingStep) {
+      this.dom.stepNote.textContent = "Reselect -> Click the new element on page";
+    }
   }
 
   private startHeartbeat() {
@@ -1308,21 +1647,38 @@ export class BuilderRuntime {
       return;
     }
 
-    this.showHighlight(target, "Click to place", "pick");
+    this.showHighlight(target, "Click to capture", "pick");
   }
 
   private updateHoverFromTarget(target: HTMLElement | null) {
-    const match = this.findMatchingStepForElement(target);
-    if (!match) {
+    const previousHoveredStepId = this.hoveredStepId;
+    if (!target) {
       this.hoveredStepId = null;
       this.hoveredElement = null;
       this.hideHighlight();
+      if (previousHoveredStepId !== null) {
+        this.renderStepList();
+      }
+      return;
+    }
+
+    const match = this.findMatchingStepForElement(target);
+    if (!match) {
+      this.hoveredStepId = null;
+      this.hoveredElement = target;
+      this.showHighlight(target, "Selectable element", "hover");
+      if (previousHoveredStepId !== null) {
+        this.renderStepList();
+      }
       return;
     }
 
     this.hoveredStepId = match.step.id;
     this.hoveredElement = match.element;
-    this.showHighlight(match.element, `Step ${match.step.step_order}`, "hover");
+    this.showHighlight(match.element, `Step ${match.step.step_order}`, "step");
+    if (previousHoveredStepId !== match.step.id) {
+      this.renderStepList();
+    }
   }
 
   private showHighlight(
@@ -1340,6 +1696,7 @@ export class BuilderRuntime {
       "guidora-sdk-builder-highlight-hover",
       "guidora-sdk-builder-highlight-pick",
       "guidora-sdk-builder-highlight-edit",
+      "guidora-sdk-builder-highlight-step",
     );
     this.dom.highlight.classList.add(`guidora-sdk-builder-highlight-${tone}`);
     this.dom.highlight.style.top = `${rect.top - 6}px`;
@@ -1366,6 +1723,7 @@ export class BuilderRuntime {
     if (this.isPicking) {
       this.previewCandidate(this.lastPointerTarget);
       this.positionEditor();
+      this.syncPreview();
       return;
     }
 
@@ -1373,16 +1731,69 @@ export class BuilderRuntime {
       const anchor = this.getDraftAnchorElement();
       this.editingElement = anchor;
       if (anchor) {
-        const label = this.draft.stepId ? "Editing step" : "New step";
+        const editingStep = this.getDraftStep();
+        const label = this.draft.stepId
+          ? `Editing step ${editingStep?.step_order ?? ""}`.trim()
+          : this.draft.selector
+            ? "Element selected"
+            : "Pick a target";
         this.showHighlight(anchor, label, "edit");
       } else {
         this.hideHighlight();
       }
       this.positionEditor();
+      this.positionPreview();
       return;
     }
 
     this.updateHoverFromTarget(this.lastPointerTarget);
+  }
+
+  private consumeRequestedStepSelection() {
+    const requestedStepId = Number.parseInt(
+      readQueryParam(BUILDER_STEP_QUERY_PARAM),
+      10,
+    );
+
+    if (!Number.isFinite(requestedStepId)) {
+      return false;
+    }
+
+    removeQueryParam(BUILDER_STEP_QUERY_PARAM);
+    this.openEditorForStep(requestedStepId);
+    return true;
+  }
+
+  private navigateToStepPage(step: SdkFlowStep) {
+    const targetPath = normalizePath(step.page_path || "/");
+    if (targetPath === this.currentPath()) {
+      return false;
+    }
+
+    const targetUrl = new URL(targetPath, window.location.origin);
+    const builderSessionToken = readQueryParam(BUILDER_QUERY_PARAM).trim();
+    if (builderSessionToken) {
+      targetUrl.searchParams.set(BUILDER_QUERY_PARAM, builderSessionToken);
+    }
+    targetUrl.searchParams.set(BUILDER_STEP_QUERY_PARAM, String(step.id));
+    window.location.assign(targetUrl.toString());
+    return true;
+  }
+
+  private focusStep(
+    stepId: number,
+    options: { navigateToPage?: boolean } = {},
+  ) {
+    const step = this.getStepById(stepId);
+    if (!step) {
+      return;
+    }
+
+    if (options.navigateToPage && this.navigateToStepPage(step)) {
+      return;
+    }
+
+    this.openEditorForStep(step.id);
   }
 
   private openEditorForStep(stepId: number) {
@@ -1404,9 +1815,11 @@ export class BuilderRuntime {
     };
     this.editingElement = this.getDraftAnchorElement();
     this.syncEditor();
+    this.syncPreview();
     this.refreshCanvas();
 
     if (this.editingElement) {
+      void this.ensureBuilderElementVisible(this.editingElement);
       this.setStatus(`Editing ${getStepTitle(step)} directly on the canvas.`);
       return;
     }
@@ -1416,6 +1829,21 @@ export class BuilderRuntime {
         ? "Editing step copy. The target element is not available on the current frame."
         : `Editing ${getStepTitle(step)}. Navigate to ${normalizePath(step.page_path || "/")} to reposition it on the page.`,
     );
+  }
+
+  private async ensureBuilderElementVisible(element: HTMLElement) {
+    const didScroll = await ensureElementInViewport(element, {
+      block: "center",
+      inline: "nearest",
+      behavior: "smooth",
+    });
+
+    if (!didScroll || !this.session) {
+      return;
+    }
+
+    this.editingElement = this.getDraftAnchorElement();
+    this.refreshCanvas();
   }
 
   private startNewHighlightStep(options: { autoPick: boolean }) {
@@ -1442,6 +1870,7 @@ export class BuilderRuntime {
     }
 
     this.syncEditor();
+    this.syncPreview();
     this.refreshCanvas();
   }
 
@@ -1463,6 +1892,7 @@ export class BuilderRuntime {
     };
     this.editingElement = null;
     this.syncEditor();
+    this.syncPreview();
     this.refreshCanvas();
     this.setStatus("Popup editor is open. Adjust the copy and save it.");
   }
@@ -1519,6 +1949,67 @@ export class BuilderRuntime {
         : "Save step";
 
     this.positionEditor();
+  }
+
+  private syncPreview() {
+    if (!this.dom) {
+      return;
+    }
+
+    if (
+      !this.draft ||
+      this.shouldHideEditorWhilePicking() ||
+      (this.draft.mode === "highlight" && !this.draft.selector)
+    ) {
+      this.dom.preview.classList.add("guidora-sdk-builder-hidden");
+      return;
+    }
+
+    this.dom.preview.classList.remove("guidora-sdk-builder-hidden");
+    this.dom.previewChip.textContent =
+      this.draft.mode === "popup" ? "Popup preview" : "Tooltip preview";
+    this.dom.previewTitle.textContent =
+      this.draft.title.trim() ||
+      (this.draft.mode === "popup" ? "Popup title" : "Tooltip title");
+    this.dom.previewBody.textContent =
+      this.draft.body.trim() ||
+      (this.draft.mode === "popup"
+        ? "Popup body preview appears here."
+        : "Tooltip body preview appears here.");
+    this.positionPreview();
+  }
+
+  private positionPreview() {
+    if (!this.dom || !this.draft) {
+      return;
+    }
+
+    const card = this.dom.preview;
+    if (card.classList.contains("guidora-sdk-builder-hidden")) {
+      return;
+    }
+
+    const width = card.offsetWidth || 280;
+    const height = card.offsetHeight || 160;
+    const minLeft =
+      window.innerWidth <= MOBILE_BREAKPOINT ? 16 : LEFT_RAIL_WIDTH + 20;
+    const maxLeft =
+      window.innerWidth <= MOBILE_BREAKPOINT
+        ? window.innerWidth - width - 16
+        : window.innerWidth - RIGHT_RAIL_WIDTH - width - 20;
+    const minTop = 16;
+    const maxTop = window.innerHeight - height - 16;
+
+    const placement = this.resolvePreviewPlacement(
+      width,
+      height,
+      minLeft,
+      maxLeft,
+      minTop,
+      maxTop,
+    );
+    card.style.left = `${placement.left}px`;
+    card.style.top = `${placement.top}px`;
   }
 
   private shouldHideEditorWhilePicking() {
@@ -1580,6 +2071,7 @@ export class BuilderRuntime {
     this.syncFlowMeta();
     this.refreshCanvas();
     this.syncEditor();
+    this.syncPreview();
     this.setStatus(
       this.draft.stepId
         ? "Select a new place on the site to reposition this step."
@@ -1591,6 +2083,7 @@ export class BuilderRuntime {
     this.isPicking = false;
     this.syncFlowMeta();
     this.syncEditor();
+    this.syncPreview();
   }
 
   private captureElement(element: HTMLElement) {
@@ -1607,8 +2100,9 @@ export class BuilderRuntime {
     this.editingElement = element;
     this.syncFlowMeta();
     this.syncEditor();
+    this.syncPreview();
     this.refreshCanvas();
-    this.setStatus("Selection saved. Adjust the step copy and save it.");
+    this.setStatus("Element selected. Adjust the step copy and save it.");
   }
 
   private closeEditor() {
@@ -1616,6 +2110,7 @@ export class BuilderRuntime {
     this.draft = null;
     this.editingElement = null;
     this.syncEditor();
+    this.syncPreview();
     this.refreshCanvas();
   }
 
@@ -1629,6 +2124,7 @@ export class BuilderRuntime {
     this.lastPointerTarget = null;
     this.hideHighlight();
     if (this.dom) {
+      this.dom.preview.classList.add("guidora-sdk-builder-hidden");
       this.dom.editor.classList.add("guidora-sdk-builder-hidden");
     }
   }
@@ -1680,6 +2176,9 @@ export class BuilderRuntime {
         pagePath: this.currentPath(),
         name: flowType === "page_popup" ? "Page popup" : "Product flow",
         type: flowType,
+        autoStart: true,
+        triggerOncePerVisitor: true,
+        aiEnabled: true,
       });
       this.applyFlowMutation(response);
       if (flowType === "page_popup") {
@@ -1755,6 +2254,9 @@ export class BuilderRuntime {
         flowId: activeFlow.id,
         name: nextName,
         pagePath: nextPath,
+        autoStart: flowForm.autoStart,
+        triggerOncePerVisitor: flowForm.triggerOncePerVisitor,
+        aiEnabled: flowForm.aiEnabled,
       });
       this.applyFlowMutation(response);
       this.setStatus(
@@ -2025,6 +2527,7 @@ export class BuilderRuntime {
       this.clearSiteInsets();
       this.syncSessionToken(null);
       removeQueryParam(BUILDER_QUERY_PARAM);
+      removeQueryParam(BUILDER_STEP_QUERY_PARAM);
     }
   }
 }

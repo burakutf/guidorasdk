@@ -1,8 +1,10 @@
 import type {
+  AssistantQueryOptions,
   BootstrapOptions,
   GuidoraConfig,
   GuideEventType,
   ResolveIntentOptions,
+  SdkAssistantResponse,
   SdkBuilderBootstrapResponse,
   SdkBuilderCloseResponse,
   SdkBuilderDeleteResponse,
@@ -97,6 +99,26 @@ export class GuidoraApiClient {
     });
   }
 
+  async assistantQuery(
+    question: string,
+    payload: Required<
+      Pick<AssistantQueryOptions, "anonymousId" | "sessionKey" | "path">
+    > &
+      AssistantQueryOptions,
+  ) {
+    return this.post<SdkAssistantResponse>("sdk/assistant/query/", {
+      api_key: this.config.apiKey,
+      domain: normalizeDomain(payload.domain ?? this.config.domain),
+      anonymous_id: payload.anonymousId,
+      question,
+      current_path: normalizePath(payload.path),
+      session_key: payload.sessionKey,
+      external_id: payload.externalId ?? this.config.externalId ?? null,
+      traits: payload.traits ?? this.config.traits ?? {},
+      locale: payload.locale ?? this.config.locale ?? "tr",
+    });
+  }
+
   async builderBootstrap(payload: { sessionToken: string; domain?: string }) {
     return this.post<SdkBuilderBootstrapResponse>("sdk/builder/bootstrap/", {
       session_token: payload.sessionToken,
@@ -124,6 +146,9 @@ export class GuidoraApiClient {
     pagePath?: string;
     name?: string;
     type?: string;
+    autoStart?: boolean;
+    triggerOncePerVisitor?: boolean;
+    aiEnabled?: boolean;
   }) {
     return this.post<SdkBuilderFlowMutationResponse>(
       "sdk/builder/create-flow/",
@@ -133,6 +158,9 @@ export class GuidoraApiClient {
         page_path: normalizePath(payload.pagePath ?? "/"),
         name: payload.name ?? "",
         type: payload.type ?? "onboarding_tooltip",
+        auto_start: payload.autoStart ?? true,
+        trigger_once_per_visitor: payload.triggerOncePerVisitor ?? true,
+        ai_enabled: payload.aiEnabled ?? true,
       },
     );
   }
@@ -160,6 +188,9 @@ export class GuidoraApiClient {
     flowId: number;
     name?: string;
     pagePath?: string;
+    autoStart?: boolean;
+    triggerOncePerVisitor?: boolean;
+    aiEnabled?: boolean;
   }) {
     return this.post<SdkBuilderFlowMutationResponse>(
       "sdk/builder/update-flow/",
@@ -172,6 +203,9 @@ export class GuidoraApiClient {
           payload.pagePath === undefined
             ? undefined
             : normalizePath(payload.pagePath || "/"),
+        auto_start: payload.autoStart,
+        trigger_once_per_visitor: payload.triggerOncePerVisitor,
+        ai_enabled: payload.aiEnabled,
       },
     );
   }

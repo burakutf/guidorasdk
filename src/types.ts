@@ -41,6 +41,7 @@ export interface GuidoraConfig {
   storagePrefix?: string;
   zIndex?: number;
   autoTrackNavigation?: boolean;
+  assistant?: GuidoraAssistantConfig;
   onFlowStart?: (flow: SdkFlow) => void;
   onFlowComplete?: (flow: SdkFlow) => void;
   onFlowDismiss?: (flow: SdkFlow) => void;
@@ -64,6 +65,31 @@ export interface ResolveIntentOptions {
   traits?: JsonRecord;
   sessionKey?: string;
   locale?: string;
+}
+
+export interface AssistantQueryOptions {
+  domain?: string;
+  path?: string;
+  anonymousId?: string;
+  externalId?: string | null;
+  traits?: JsonRecord;
+  sessionKey?: string;
+  locale?: string;
+}
+
+export interface GuidoraAssistantConfig {
+  agent_id?: number;
+  name?: string;
+  enabled?: boolean;
+  launcherLabel?: string;
+  title?: string;
+  subtitle?: string;
+  eyebrow?: string;
+  welcomeMessage?: string;
+  placeholder?: string;
+  submitLabel?: string;
+  loadingLabel?: string;
+  suggestions?: string[];
 }
 
 export interface TrackEventOptions {
@@ -99,7 +125,9 @@ export interface SdkFlow {
   description: string;
   priority: number;
   trigger_once_per_visitor: boolean;
+  ai_enabled: boolean;
   entry_path: string;
+  page_auto_start: boolean;
   steps: SdkFlowStep[];
 }
 
@@ -133,6 +161,7 @@ export interface SdkBootstrapResponse {
   };
   flow: SdkFlow | null;
   progress: SdkFlowProgress | null;
+  assistant: GuidoraAssistantConfig | null;
   triggered: boolean;
   started: boolean;
 }
@@ -149,6 +178,39 @@ export interface SdkResolveIntentResponse {
   score: number;
   flow: SdkFlow | null;
   progress: SdkFlowProgress | null;
+}
+
+export interface SdkAssistantDraftFlow {
+  name: string;
+  description: string;
+  entry_path: string;
+  suggested_intents: string[];
+  suggested_copy?: string;
+}
+
+export interface SdkAssistantUsage {
+  plan: string;
+  queries_used: number;
+  queries_limit: number | null;
+  queries_remaining: number | null;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
+export interface SdkAssistantResponse {
+  action: "start_flow" | "highlight" | "suggest_flow" | "limit_reached" | string;
+  message: string;
+  matched: boolean;
+  matched_intent: string;
+  score: number;
+  flow: SdkFlow | null;
+  progress: SdkFlowProgress | null;
+  highlight_step: SdkFlowStep | null;
+  draft_flow: SdkAssistantDraftFlow | null;
+  usage: SdkAssistantUsage;
+  source: string;
+  assistant: GuidoraAssistantConfig | null;
 }
 
 export interface SdkBuilderSession {
@@ -236,6 +298,10 @@ export interface GuidoraClient {
     question: string,
     options?: ResolveIntentOptions,
   ): Promise<SdkResolveIntentResponse>;
+  askAssistant(
+    question: string,
+    options?: AssistantQueryOptions,
+  ): Promise<SdkAssistantResponse>;
   track(
     eventType: GuideEventType,
     options?: TrackEventOptions,

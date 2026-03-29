@@ -1,5 +1,11 @@
 import { generateId, invariantBrowser } from "./utils";
 
+type PendingPreviewTarget = {
+  flowSlug: string;
+  stepOrder: number;
+  path: string;
+};
+
 export class GuidoraStorage {
   private readonly storagePrefix: string;
 
@@ -36,6 +42,45 @@ export class GuidoraStorage {
   clearBuilderSessionToken() {
     invariantBrowser();
     window.sessionStorage.removeItem(this.buildKey("builder-session-token"));
+  }
+
+  getPendingPreviewTarget() {
+    invariantBrowser();
+    const rawValue = window.sessionStorage.getItem(
+      this.buildKey("pending-preview-target"),
+    );
+    if (!rawValue) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(rawValue) as PendingPreviewTarget;
+      if (
+        !parsed ||
+        typeof parsed.flowSlug !== "string" ||
+        typeof parsed.stepOrder !== "number" ||
+        typeof parsed.path !== "string"
+      ) {
+        return null;
+      }
+
+      return parsed;
+    } catch {
+      return null;
+    }
+  }
+
+  setPendingPreviewTarget(target: PendingPreviewTarget) {
+    invariantBrowser();
+    window.sessionStorage.setItem(
+      this.buildKey("pending-preview-target"),
+      JSON.stringify(target),
+    );
+  }
+
+  clearPendingPreviewTarget() {
+    invariantBrowser();
+    window.sessionStorage.removeItem(this.buildKey("pending-preview-target"));
   }
 
   private buildKey(key: string) {

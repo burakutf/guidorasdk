@@ -1,5 +1,5 @@
 import type { SdkFlow, SdkFlowStep } from "../types";
-import { clamp, normalizePath, wait } from "../utils";
+import { clamp, ensureElementInViewport, normalizePath, wait } from "../utils";
 import { injectGuidoraStyles } from "./style";
 
 type TooltipRuntimeHandlers = {
@@ -7,6 +7,7 @@ type TooltipRuntimeHandlers = {
   onStepCompleted: (step: SdkFlowStep) => Promise<void> | void;
   onFlowCompleted: (flow: SdkFlow, step: SdkFlowStep) => Promise<void> | void;
   onFlowDismissed: (flow: SdkFlow, step: SdkFlowStep) => Promise<void> | void;
+  onRouteToStep: (flow: SdkFlow, step: SdkFlowStep) => boolean;
 };
 
 type ActiveFlowSession = {
@@ -44,13 +45,22 @@ export class TooltipRuntime {
     injectGuidoraStyles(this.zIndex);
     this.ensureDom();
 
+    const sortedFlow = {
+      ...flow,
+      steps: [...flow.steps].sort(
+        (left, right) => left.step_order - right.step_order,
+      ),
+    };
+
     const nextIndex = Math.max(
       0,
-      flow.steps.findIndex((step) => step.step_order === currentStepOrder),
+      sortedFlow.steps.findIndex(
+        (step) => step.step_order === currentStepOrder,
+      ),
     );
 
     this.activeSession = {
-      flow,
+      flow: sortedFlow,
       currentStepIndex: nextIndex >= 0 ? nextIndex : 0,
       viewedSteps: new Set<number>(),
       handlers,
@@ -210,7 +220,7 @@ export class TooltipRuntime {
     while (token === this.renderToken) {
       const element = document.querySelector<HTMLElement>(step.selector);
       if (element) {
-        element.scrollIntoView({
+        await ensureElementInViewport(element, {
           block: "center",
           inline: "center",
           behavior: "smooth",
@@ -349,7 +359,7 @@ export class TooltipRuntime {
     return "Next step";
   }
 
-  private routeToStep(step: SdkFlowStep) {
+  private routeToStep(flow: SdkFlow, step: SdkFlowStep) {
     const targetPath = normalizePath(
       step.page_path || window.location.pathname,
     );
@@ -357,9 +367,7 @@ export class TooltipRuntime {
       return false;
     }
 
-    this.hide();
-    window.location.assign(targetPath);
-    return true;
+    return flow ? this.activeSession?.handlers.onRouteToStep(flow, step) ?? false : false;
   }
 
   private async handleAdvance() {
@@ -384,7 +392,7 @@ export class TooltipRuntime {
     const nextStep = session.flow.steps[session.currentStepIndex + 1];
     session.currentStepIndex += 1;
 
-    if (nextStep && this.routeToStep(nextStep)) {
+    if (nextStep && this.routeToStep(session.flow, nextStep)) {
       return;
     }
 

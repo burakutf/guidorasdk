@@ -81,6 +81,32 @@ export function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+export async function ensureElementInViewport(
+  element: HTMLElement,
+  options: ScrollIntoViewOptions = {
+    block: "center",
+    inline: "center",
+    behavior: "smooth",
+  },
+) {
+  const rect = element.getBoundingClientRect();
+  const viewportPadding = 24;
+  const isVisibleVertically =
+    rect.top >= viewportPadding &&
+    rect.bottom <= window.innerHeight - viewportPadding;
+  const isVisibleHorizontally =
+    rect.left >= viewportPadding &&
+    rect.right <= window.innerWidth - viewportPadding;
+
+  if (isVisibleVertically && isVisibleHorizontally) {
+    return false;
+  }
+
+  element.scrollIntoView(options);
+  await wait(options.behavior === "smooth" ? 260 : 32);
+  return true;
+}
+
 export function noop() {}
 
 export function observeNavigation(onNavigate: () => void) {

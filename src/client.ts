@@ -1,17 +1,21 @@
 import { GuidoraApiClient } from "./http";
+import { AssistantRuntime } from "./runtime/assistant";
 import { BuilderRuntime } from "./runtime/builder";
 import { TooltipRuntime } from "./runtime/tooltip";
 import { GuidoraStorage } from "./storage";
 import type {
+  AssistantQueryOptions,
   BootstrapOptions,
-  JsonRecord,
-  SdkBuilderBootstrapResponse,
   GuidoraClient,
   GuidoraConfig,
   GuideEventType,
+  JsonRecord,
   ResolveIntentOptions,
+  SdkAssistantResponse,
+  SdkBuilderBootstrapResponse,
   SdkFlow,
   SdkFlowProgress,
+  SdkFlowStep,
   TrackEventOptions,
 } from "./types";
 import {
@@ -29,6 +33,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
   private readonly api: GuidoraApiClient;
   private readonly builderRuntime: BuilderRuntime;
   private readonly tooltipRuntime: TooltipRuntime;
+  private readonly assistantRuntime: AssistantRuntime | null;
   private removeNavigationObserver: (() => void) | null = null;
   private lastBootstrapPath = "";
   private builderBootstrapPromise: Promise<SdkBuilderBootstrapResponse> | null =
@@ -55,6 +60,15 @@ export class GuidoraBrowserClient implements GuidoraClient {
       },
     );
     this.tooltipRuntime = new TooltipRuntime(config.zIndex);
+    this.assistantRuntime =
+      config.assistant?.enabled === false
+        ? null
+        : new AssistantRuntime(config.assistant, config.zIndex ?? 2147483000, {
+            askQuestion: (question) => this.askAssistant(question),
+            isSuppressed: () => this.builderRuntime.isActive(),
+          });
+    this.assistantRuntime?.mount();
+    this.assistantRuntime?.setSuppressed(false);
 
     if (config.autoTrackNavigation !== false) {
       this.removeNavigationObserver = observeNavigation(() => {
@@ -95,6 +109,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
       const builderSession = await this.maybeStartBuilderMode();
       if (builderSession) {
         this.tooltipRuntime.hide();
+        this.assistantRuntime?.setSuppressed(false);
         return this.createBuilderBootstrapResponse(
           builderSession,
           path,
@@ -109,6 +124,8 @@ export class GuidoraBrowserClient implements GuidoraClient {
         sessionKey: options.sessionKey ?? this.getSessionKey(),
       });
 
+      this.assistantRuntime?.applyAssistantConfig(response.assistant);
+
       if (response.flow && response.progress) {
         await this.startFlow(response.flow, response.progress, {
           emitFlowStarted: false,
@@ -116,6 +133,8 @@ export class GuidoraBrowserClient implements GuidoraClient {
       } else {
         this.tooltipRuntime.hide();
       }
+
+      this.assistantRuntime?.setSuppressed(false);
 
       return response;
     } catch (error) {
@@ -146,6 +165,47 @@ export class GuidoraBrowserClient implements GuidoraClient {
     }
   }
 
+  async askAssistant(
+    question: string,
+    options: AssistantQueryOptions = {},
+  ) {
+    try {
+      const response = await this.api.assistantQuery(question, {
+        ...options,
+        path: normalizePath(options.path ?? window.location.pathname),
+        anonymousId: options.anonymousId ?? this.getAnonymousId(),
+        sessionKey: options.sessionKey ?? this.getSessionKey(),
+      });
+
+      this.assistantRuntime?.applyAssistantConfig(response.assistant);
+
+      if (
+        response.action === "start_flow" &&
+        response.flow &&
+        response.progress
+      ) {
+        this.assistantRuntime?.collapseForGuidance();
+        await this.startFlow(response.flow, response.progress, {
+          emitFlowStarted: true,
+        });
+      }
+
+      if (
+        response.action === "highlight" &&
+        response.flow &&
+        response.highlight_step
+      ) {
+        this.assistantRuntime?.collapseForGuidance();
+        await this.startHighlight(response);
+      }
+
+      return response;
+    } catch (error) {
+      this.handleError(error as Error);
+      throw error;
+    }
+  }
+
   async track(eventType: GuideEventType, options: TrackEventOptions = {}) {
     try {
       return await this.api.track(eventType, {
@@ -165,6 +225,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
     this.removeNavigationObserver = null;
     this.builderRuntime.destroy();
     this.tooltipRuntime.destroy();
+    this.assistantRuntime?.destroy();
   }
 
   private async maybeStartBuilderMode() {
@@ -217,7 +278,31 @@ export class GuidoraBrowserClient implements GuidoraClient {
     );
   }
 
-  private routeToStepIfNeeded(step: SdkFlowStep) {
+  private resolveStepOrder(flow: SdkFlow, progress: SdkFlowProgress) {
+    const pendingTarget = this.storage.getPendingPreviewTarget();
+    const currentPath = normalizePath(window.location.pathname);
+
+    if (
+      pendingTarget &&
+      pendingTarget.flowSlug === flow.slug &&
+      normalizePath(pendingTarget.path) === currentPath
+    ) {
+      this.storage.clearPendingPreviewTarget();
+      return pendingTarget.stepOrder;
+    }
+
+    if (
+      pendingTarget &&
+      normalizePath(pendingTarget.path) === currentPath &&
+      pendingTarget.flowSlug !== flow.slug
+    ) {
+      this.storage.clearPendingPreviewTarget();
+    }
+
+    return progress.current_step_order || flow.steps[0]?.step_order || 1;
+  }
+
+  private routeToStepIfNeeded(flow: SdkFlow, step: SdkFlowStep) {
     const targetPath = normalizePath(
       step.page_path || window.location.pathname,
     );
@@ -225,6 +310,11 @@ export class GuidoraBrowserClient implements GuidoraClient {
       return false;
     }
 
+    this.storage.setPendingPreviewTarget({
+      flowSlug: flow.slug,
+      stepOrder: step.step_order,
+      path: targetPath,
+    });
     this.tooltipRuntime.hide();
     window.location.assign(targetPath);
     return true;
@@ -251,6 +341,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
       },
       flow: builderSession.flow,
       progress: null,
+      assistant: null,
       triggered: false,
       started: false,
     };
@@ -261,12 +352,12 @@ export class GuidoraBrowserClient implements GuidoraClient {
     progress: SdkFlowProgress,
     options: { emitFlowStarted: boolean },
   ) {
-    const currentStepOrder =
-      progress.current_step_order || flow.steps[0]?.step_order || 1;
+    const currentStepOrder = this.resolveStepOrder(flow, progress);
     const activeStep = this.resolveActiveStep(flow, currentStepOrder);
 
     if (!activeStep) {
       this.tooltipRuntime.hide();
+      this.assistantRuntime?.restoreAfterGuidance();
       return;
     }
 
@@ -277,40 +368,112 @@ export class GuidoraBrowserClient implements GuidoraClient {
       });
     }
 
-    if (this.routeToStepIfNeeded(activeStep)) {
+    if (this.routeToStepIfNeeded(flow, activeStep)) {
+      this.assistantRuntime?.cancelGuidanceCollapse();
       return;
     }
 
     this.config.onFlowStart?.(flow);
 
-    await this.tooltipRuntime.start(flow, activeStep.step_order, {
-      onStepViewed: async (step) => {
-        await this.safeTrack("step_viewed", {
-          flowSlug: flow.slug,
-          stepOrder: step.step_order,
-        });
-      },
-      onStepCompleted: async (step) => {
-        await this.safeTrack("step_completed", {
-          flowSlug: flow.slug,
-          stepOrder: step.step_order,
-        });
-      },
-      onFlowCompleted: async (_completedFlow, completedStep) => {
-        await this.safeTrack("flow_completed", {
-          flowSlug: flow.slug,
-          stepOrder: completedStep.step_order,
-        });
-        this.config.onFlowComplete?.(flow);
-      },
-      onFlowDismissed: async (_dismissedFlow, activeStep) => {
-        await this.safeTrack("flow_dismissed", {
-          flowSlug: flow.slug,
-          stepOrder: activeStep.step_order,
-        });
-        this.config.onFlowDismiss?.(flow);
-      },
-    });
+    try {
+      await this.tooltipRuntime.start(flow, activeStep.step_order, {
+        onStepViewed: async (step) => {
+          await this.safeTrack("step_viewed", {
+            flowSlug: flow.slug,
+            stepOrder: step.step_order,
+          });
+        },
+        onStepCompleted: async (step) => {
+          await this.safeTrack("step_completed", {
+            flowSlug: flow.slug,
+            stepOrder: step.step_order,
+          });
+        },
+        onFlowCompleted: async (_completedFlow, completedStep) => {
+          await this.safeTrack("flow_completed", {
+            flowSlug: flow.slug,
+            stepOrder: completedStep.step_order,
+          });
+          this.config.onFlowComplete?.(flow);
+          this.assistantRuntime?.restoreAfterGuidance();
+        },
+        onFlowDismissed: async (_dismissedFlow, activeStep) => {
+          await this.safeTrack("flow_dismissed", {
+            flowSlug: flow.slug,
+            stepOrder: activeStep.step_order,
+          });
+          this.config.onFlowDismiss?.(flow);
+          this.assistantRuntime?.restoreAfterGuidance();
+        },
+        onRouteToStep: (activeFlow, step) =>
+          this.routeToStepIfNeeded(activeFlow, step),
+      });
+    } catch (error) {
+      this.assistantRuntime?.restoreAfterGuidance();
+      throw error;
+    }
+  }
+
+  private async startHighlight(response: SdkAssistantResponse) {
+    const flow = response.flow;
+    const step = response.highlight_step;
+    if (!flow || !step) {
+      this.assistantRuntime?.restoreAfterGuidance();
+      return;
+    }
+
+    const highlightFlow: SdkFlow = {
+      ...flow,
+      description: response.message || flow.description,
+      steps: [
+        {
+          ...step,
+          step_order: 1,
+          tooltip_title: step.tooltip_title || flow.name,
+          tooltip_body:
+            response.message ||
+            step.tooltip_body ||
+            flow.description ||
+            "Continue here.",
+        },
+      ],
+    };
+    const activeStep = highlightFlow.steps[0] as SdkFlowStep;
+
+    if (this.routeToStepIfNeeded(highlightFlow, activeStep)) {
+      this.assistantRuntime?.cancelGuidanceCollapse();
+      return;
+    }
+
+    try {
+      await this.tooltipRuntime.start(highlightFlow, 1, {
+        onStepViewed: async () => {
+          await this.safeTrack("step_viewed", {
+            flowSlug: flow.slug,
+            stepOrder: step.step_order,
+            metadata: { source: "assistant_highlight" },
+          });
+        },
+        onStepCompleted: async () => {
+          await this.safeTrack("step_completed", {
+            flowSlug: flow.slug,
+            stepOrder: step.step_order,
+            metadata: { source: "assistant_highlight" },
+          });
+        },
+        onFlowCompleted: async () => {
+          this.assistantRuntime?.restoreAfterGuidance();
+        },
+        onFlowDismissed: async () => {
+          this.assistantRuntime?.restoreAfterGuidance();
+        },
+        onRouteToStep: (activeFlow, nextStep) =>
+          this.routeToStepIfNeeded(activeFlow, nextStep),
+      });
+    } catch (error) {
+      this.assistantRuntime?.restoreAfterGuidance();
+      throw error;
+    }
   }
 
   private async safeTrack(
