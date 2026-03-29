@@ -129,13 +129,20 @@ export class AssistantRuntime {
     this.submitButton.type = "submit";
     this.submitButton.className =
       "guidora-sdk-button guidora-sdk-button-primary guidora-sdk-assistant-submit";
-    this.submitButton.textContent = this.resolveConfig().submitLabel ?? "Guide me";
+    this.submitButton.textContent =
+      this.resolveConfig().submitLabel ?? "Guide me";
 
     this.status = document.createElement("div");
     this.status.className = "guidora-sdk-assistant-status";
 
     this.form.append(this.input, this.submitButton);
-    this.panel.append(header, this.transcript, suggestions, this.form, this.status);
+    this.panel.append(
+      header,
+      this.transcript,
+      suggestions,
+      this.form,
+      this.status,
+    );
     this.root.append(this.launcher, this.panel);
     document.body.append(this.root);
 
@@ -242,7 +249,8 @@ export class AssistantRuntime {
       this.setStatus(this.buildStatus(response));
       this.renderTranscript();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Assistant request failed.";
+      const message =
+        error instanceof Error ? error.message : "Assistant request failed.";
       this.messages.push({ role: "assistant", text: message, tone: "warning" });
       this.setStatus(message);
       this.renderTranscript();
@@ -288,8 +296,8 @@ export class AssistantRuntime {
     if (this.submitButton) {
       this.submitButton.disabled = loading;
       this.submitButton.textContent = loading
-        ? this.resolveConfig().loadingLabel ?? "Working..."
-        : this.resolveConfig().submitLabel ?? "Guide me";
+        ? (this.resolveConfig().loadingLabel ?? "Working...")
+        : (this.resolveConfig().submitLabel ?? "Guide me");
     }
   }
 
@@ -304,13 +312,22 @@ export class AssistantRuntime {
       return;
     }
 
-    const suppressed = this.dependencies.isSuppressed() || !this.hasVisibleConfig();
+    const suppressed =
+      this.dependencies.isSuppressed() || !this.hasVisibleConfig();
     this.root.classList.toggle("guidora-sdk-hidden", suppressed);
-    this.launcher.textContent = this.resolveConfig().launcherLabel ?? "Ask Guidora";
-    this.panel.classList.toggle("guidora-sdk-hidden", !this.visible || suppressed);
-    this.launcher.setAttribute("aria-expanded", this.visible ? "true" : "false");
+    this.launcher.textContent =
+      this.resolveConfig().launcherLabel ?? "Ask Guidora";
+    this.panel.classList.toggle(
+      "guidora-sdk-hidden",
+      !this.visible || suppressed,
+    );
+    this.launcher.setAttribute(
+      "aria-expanded",
+      this.visible ? "true" : "false",
+    );
     if (this.headerEyebrow) {
-      this.headerEyebrow.textContent = this.resolveConfig().eyebrow ?? "AI guide";
+      this.headerEyebrow.textContent =
+        this.resolveConfig().eyebrow ?? "AI guide";
     }
     if (this.headerTitle) {
       this.headerTitle.textContent =
@@ -376,10 +393,7 @@ export class AssistantRuntime {
 
   private resolvePlaceholder() {
     const config = this.resolveConfig();
-    return (
-      config.placeholder ||
-      "How do I complete this task?"
-    );
+    return config.placeholder || "How do I complete this task?";
   }
 
   private resolveSuggestions() {

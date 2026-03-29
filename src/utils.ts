@@ -11,7 +11,9 @@ export function invariantBrowser() {
 }
 
 export function normalizeDomain(value?: string) {
-  const raw = (value ?? (isBrowser() ? window.location.host : "")).trim().toLowerCase();
+  const raw = (value ?? (isBrowser() ? window.location.host : ""))
+    .trim()
+    .toLowerCase();
   if (!raw) {
     return "";
   }
@@ -54,7 +56,11 @@ export function removeQueryParam(name: string) {
   }
 
   url.searchParams.delete(name);
-  window.history.replaceState(window.history.state, document.title, url.toString());
+  window.history.replaceState(
+    window.history.state,
+    document.title,
+    url.toString(),
+  );
 }
 
 export function escapeCssIdentifier(value: string) {
@@ -66,7 +72,10 @@ export function escapeCssIdentifier(value: string) {
 }
 
 export function generateId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
 

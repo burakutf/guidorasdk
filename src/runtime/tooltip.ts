@@ -367,7 +367,9 @@ export class TooltipRuntime {
       return false;
     }
 
-    return flow ? this.activeSession?.handlers.onRouteToStep(flow, step) ?? false : false;
+    return flow
+      ? (this.activeSession?.handlers.onRouteToStep(flow, step) ?? false)
+      : false;
   }
 
   private async handleAdvance() {

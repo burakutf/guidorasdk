@@ -199,7 +199,12 @@ export interface SdkAssistantUsage {
 }
 
 export interface SdkAssistantResponse {
-  action: "start_flow" | "highlight" | "suggest_flow" | "limit_reached" | string;
+  action:
+    | "start_flow"
+    | "highlight"
+    | "suggest_flow"
+    | "limit_reached"
+    | string;
   message: string;
   matched: boolean;
   matched_intent: string;

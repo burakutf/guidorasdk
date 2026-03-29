@@ -165,10 +165,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
     }
   }
 
-  async askAssistant(
-    question: string,
-    options: AssistantQueryOptions = {},
-  ) {
+  async askAssistant(question: string, options: AssistantQueryOptions = {}) {
     try {
       const response = await this.api.assistantQuery(question, {
         ...options,

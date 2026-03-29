@@ -698,8 +698,7 @@ export class BuilderRuntime {
     addStepTitle.textContent = "Highlight element";
     const addStepCopy = document.createElement("span");
     addStepCopy.className = "guidora-sdk-builder-action-copy";
-    addStepCopy.textContent =
-      "Add step, then click an element on the page.";
+    addStepCopy.textContent = "Add step, then click an element on the page.";
     addStepButton.append(addStepTitle, addStepCopy);
 
     const addPopupButton = document.createElement("button");
@@ -898,7 +897,14 @@ export class BuilderRuntime {
       footer,
     );
 
-    root.append(highlight, highlightBadge, leftRail, rightRail, preview, editor);
+    root.append(
+      highlight,
+      highlightBadge,
+      leftRail,
+      rightRail,
+      preview,
+      editor,
+    );
     document.body.append(root);
 
     this.dom = {
@@ -1079,7 +1085,10 @@ export class BuilderRuntime {
     );
   }
 
-  private describeFlowTriggers(flow: SdkFlow, flowForm: BuilderFlowForm | null) {
+  private describeFlowTriggers(
+    flow: SdkFlow,
+    flowForm: BuilderFlowForm | null,
+  ) {
     const entryPath = normalizePath(
       flowForm?.entryPath ?? this.getActiveFlowEntryPath(flow),
     );
@@ -1114,11 +1123,20 @@ export class BuilderRuntime {
     return rect;
   }
 
-  private makePositionedBox(left: number, top: number, width: number, height: number): PositionedBox {
+  private makePositionedBox(
+    left: number,
+    top: number,
+    width: number,
+    height: number,
+  ): PositionedBox {
     return { left, top, width, height };
   }
 
-  private overlapsRect(candidate: PositionedBox, rect: DOMRect | null, gap = 16) {
+  private overlapsRect(
+    candidate: PositionedBox,
+    rect: DOMRect | null,
+    gap = 16,
+  ) {
     if (!rect) {
       return false;
     }
@@ -1141,7 +1159,13 @@ export class BuilderRuntime {
   ) {
     const anchor = this.getDraftAnchorElement();
     const editorRect = this.getVisibleEditorRect();
-    const placements: TooltipPosition[] = ["bottom", "top", "right", "left", "center"];
+    const placements: TooltipPosition[] = [
+      "bottom",
+      "top",
+      "right",
+      "left",
+      "center",
+    ];
     const clampLeft = (value: number) =>
       clamp(value, minLeft, Math.max(minLeft, maxLeft));
     const clampTop = (value: number) =>
@@ -1180,7 +1204,12 @@ export class BuilderRuntime {
           break;
       }
 
-      return this.makePositionedBox(clampLeft(left), clampTop(top), width, height);
+      return this.makePositionedBox(
+        clampLeft(left),
+        clampTop(top),
+        width,
+        height,
+      );
     };
 
     for (const placement of placements) {
@@ -1479,13 +1508,9 @@ export class BuilderRuntime {
       : "Delete flow";
 
     const isCreatingHighlightStep =
-      this.isPicking &&
-      draft?.stepId === null &&
-      draft?.mode === "highlight";
+      this.isPicking && draft?.stepId === null && draft?.mode === "highlight";
     const isRecapturingStep =
-      this.isPicking &&
-      draft?.stepId !== null &&
-      draft?.mode === "highlight";
+      this.isPicking && draft?.stepId !== null && draft?.mode === "highlight";
 
     this.dom.addStepButton.classList.toggle(
       "guidora-sdk-builder-action-card-active",
@@ -1517,7 +1542,8 @@ export class BuilderRuntime {
       this.dom.flowAiInput.checked = false;
       this.dom.flowTriggerSummary.textContent =
         "Select a flow to configure when it should start.";
-      this.dom.stepNote.textContent = "Choose a flow, then start building on the page.";
+      this.dom.stepNote.textContent =
+        "Choose a flow, then start building on the page.";
       return;
     }
 
@@ -1539,8 +1565,7 @@ export class BuilderRuntime {
       flowForm?.autoStart ?? activeFlow.page_auto_start;
     this.dom.flowOnceInput.checked =
       flowForm?.triggerOncePerVisitor ?? activeFlow.trigger_once_per_visitor;
-    this.dom.flowAiInput.checked =
-      flowForm?.aiEnabled ?? activeFlow.ai_enabled;
+    this.dom.flowAiInput.checked = flowForm?.aiEnabled ?? activeFlow.ai_enabled;
     this.dom.flowTriggerSummary.textContent = this.describeFlowTriggers(
       activeFlow,
       flowForm,
@@ -1549,7 +1574,8 @@ export class BuilderRuntime {
     if (isCreatingHighlightStep) {
       this.dom.stepNote.textContent = "Add step -> Click element on page";
     } else if (isRecapturingStep) {
-      this.dom.stepNote.textContent = "Reselect -> Click the new element on page";
+      this.dom.stepNote.textContent =
+        "Reselect -> Click the new element on page";
     }
   }
 
