@@ -23,6 +23,13 @@ export function injectGuidoraStyles(zIndex: number) {
       z-index: ${zIndex};
       pointer-events: none;
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --guidora-accent-color: #3B6EE8;
+      --guidora-launcher-bg: #172033;
+      --guidora-launcher-text: #FFFFFF;
+      --guidora-panel-bg: #FFFFFF;
+      --guidora-panel-text: #172033;
+      --guidora-highlight-color: #20A964;
+      --guidora-highlight-overlay: #2E3A59;
     }
 
     .guidora-sdk-hidden {
@@ -33,8 +40,8 @@ export function injectGuidoraStyles(zIndex: number) {
     .guidora-sdk-highlight {
       position: fixed;
       border-radius: 16px;
-      border: 2px solid #20A964;
-      box-shadow: 0 0 0 9999px rgba(46, 58, 89, 0.18);
+      border: 2px solid var(--guidora-highlight-color);
+      box-shadow: 0 0 0 9999px color-mix(in srgb, var(--guidora-highlight-overlay) 18%, transparent);
       background: rgba(255, 255, 255, 0.06);
       transition: all 180ms ease;
       pointer-events: none;
@@ -45,8 +52,8 @@ export function injectGuidoraStyles(zIndex: number) {
       width: min(340px, calc(100vw - 32px));
       border-radius: 24px;
       border: 1px solid #E5E7EB;
-      background: #FFFFFF;
-      color: #2E3A59;
+      background: var(--guidora-panel-bg);
+      color: var(--guidora-panel-text);
       box-shadow: 0 24px 72px rgba(46, 58, 89, 0.16);
       padding: 20px;
       pointer-events: auto;
@@ -57,8 +64,8 @@ export function injectGuidoraStyles(zIndex: number) {
       display: inline-flex;
       align-items: center;
       border-radius: 999px;
-      background: rgba(59, 110, 232, 0.12);
-      color: #3B6EE8;
+      background: color-mix(in srgb, var(--guidora-accent-color) 12%, transparent);
+      color: var(--guidora-accent-color);
       font-size: 12px;
       font-weight: 600;
       padding: 6px 10px;
@@ -70,14 +77,14 @@ export function injectGuidoraStyles(zIndex: number) {
       font-size: 20px;
       line-height: 1.3;
       font-weight: 700;
-      color: #2E3A59;
+      color: var(--guidora-panel-text);
     }
 
     .guidora-sdk-body {
       margin: 12px 0 0;
       font-size: 14px;
       line-height: 1.65;
-      color: #5B6478;
+      color: color-mix(in srgb, var(--guidora-panel-text) 72%, #FFFFFF 28%);
     }
 
     .guidora-sdk-footer {
@@ -118,7 +125,7 @@ export function injectGuidoraStyles(zIndex: number) {
     }
 
     .guidora-sdk-button-primary {
-      background: #3B6EE8;
+      background: var(--guidora-accent-color);
       color: #FFFFFF;
     }
 
@@ -150,8 +157,8 @@ export function injectGuidoraStyles(zIndex: number) {
     .guidora-sdk-assistant-launcher {
       border: 0;
       border-radius: 999px;
-      background: linear-gradient(135deg, #172033 0%, #3B6EE8 100%);
-      color: #FFFFFF;
+      background: var(--guidora-launcher-bg);
+      color: var(--guidora-launcher-text);
       font-size: 14px;
       font-weight: 700;
       line-height: 1;
@@ -164,7 +171,7 @@ export function injectGuidoraStyles(zIndex: number) {
       width: min(380px, calc(100vw - 24px));
       border-radius: 28px;
       border: 1px solid rgba(15, 23, 42, 0.08);
-      background: rgba(255, 255, 255, 0.98);
+      background: color-mix(in srgb, var(--guidora-panel-bg) 98%, transparent);
       backdrop-filter: blur(12px);
       box-shadow: 0 28px 80px rgba(15, 23, 42, 0.18);
       padding: 18px;
@@ -189,27 +196,27 @@ export function injectGuidoraStyles(zIndex: number) {
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: #3B6EE8;
+      color: var(--guidora-accent-color);
     }
 
     .guidora-sdk-assistant-title {
       margin: 0;
       font-size: 22px;
       line-height: 1.15;
-      color: #172033;
+      color: var(--guidora-panel-text);
     }
 
     .guidora-sdk-assistant-subtitle {
       margin: 0;
       font-size: 13px;
       line-height: 1.55;
-      color: #5B6478;
+      color: color-mix(in srgb, var(--guidora-panel-text) 72%, #FFFFFF 28%);
     }
 
     .guidora-sdk-assistant-close {
       border: 0;
       background: #F3F4F6;
-      color: #172033;
+      color: var(--guidora-panel-text);
       border-radius: 999px;
       padding: 10px 12px;
       font-size: 12px;
@@ -236,19 +243,19 @@ export function injectGuidoraStyles(zIndex: number) {
 
     .guidora-sdk-assistant-message-assistant {
       background: #F8FAFC;
-      color: #25324A;
+      color: var(--guidora-panel-text);
       border: 1px solid rgba(191, 199, 214, 0.52);
     }
 
     .guidora-sdk-assistant-message-user {
-      background: rgba(59, 110, 232, 0.1);
-      color: #17305F;
-      border: 1px solid rgba(59, 110, 232, 0.16);
+      background: color-mix(in srgb, var(--guidora-accent-color) 10%, white);
+      color: var(--guidora-panel-text);
+      border: 1px solid color-mix(in srgb, var(--guidora-accent-color) 18%, transparent);
     }
 
     .guidora-sdk-assistant-message[data-tone="success"] {
-      background: rgba(32, 169, 100, 0.1);
-      border-color: rgba(32, 169, 100, 0.22);
+      background: color-mix(in srgb, var(--guidora-highlight-color) 10%, white);
+      border-color: color-mix(in srgb, var(--guidora-highlight-color) 22%, transparent);
     }
 
     .guidora-sdk-assistant-message[data-tone="warning"] {
@@ -266,7 +273,7 @@ export function injectGuidoraStyles(zIndex: number) {
 
     .guidora-sdk-assistant-draft strong {
       font-size: 12px;
-      color: #172033;
+      color: var(--guidora-panel-text);
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
@@ -279,8 +286,8 @@ export function injectGuidoraStyles(zIndex: number) {
 
     .guidora-sdk-assistant-chip {
       border: 1px solid rgba(191, 199, 214, 0.72);
-      background: #FFFFFF;
-      color: #25324A;
+      background: var(--guidora-panel-bg);
+      color: var(--guidora-panel-text);
       border-radius: 999px;
       padding: 9px 12px;
       font-size: 12px;
@@ -299,8 +306,8 @@ export function injectGuidoraStyles(zIndex: number) {
       min-height: 86px;
       border-radius: 18px;
       border: 1px solid rgba(191, 199, 214, 0.78);
-      background: #FFFFFF;
-      color: #172033;
+      background: var(--guidora-panel-bg);
+      color: var(--guidora-panel-text);
       padding: 12px 14px;
       font: inherit;
     }
@@ -312,7 +319,7 @@ export function injectGuidoraStyles(zIndex: number) {
     .guidora-sdk-assistant-status {
       font-size: 12px;
       font-weight: 600;
-      color: #5B6478;
+      color: color-mix(in srgb, var(--guidora-panel-text) 72%, #FFFFFF 28%);
     }
 
     @media (max-width: 720px) {

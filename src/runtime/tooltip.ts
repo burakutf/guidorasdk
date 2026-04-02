@@ -1,4 +1,4 @@
-import type { SdkFlow, SdkFlowStep } from "../types";
+import type { GuidoraAssistantTheme, SdkFlow, SdkFlowStep } from "../types";
 import { clamp, ensureElementInViewport, normalizePath, wait } from "../utils";
 import { injectGuidoraStyles } from "./style";
 
@@ -19,6 +19,7 @@ type ActiveFlowSession = {
 
 export class TooltipRuntime {
   private readonly zIndex: number;
+  private theme: GuidoraAssistantTheme | null = null;
   private root: HTMLDivElement | null = null;
   private highlight: HTMLDivElement | null = null;
   private card: HTMLDivElement | null = null;
@@ -35,6 +36,39 @@ export class TooltipRuntime {
 
   constructor(zIndex = 2147483000) {
     this.zIndex = zIndex;
+  }
+
+  applyTheme(theme: GuidoraAssistantTheme | null | undefined) {
+    this.theme = theme ?? null;
+    if (!this.root) {
+      return;
+    }
+
+    this.setThemeVar(
+      "--guidora-accent-color",
+      this.theme?.accentColor,
+      "#3B6EE8",
+    );
+    this.setThemeVar(
+      "--guidora-panel-bg",
+      this.theme?.panelBackgroundColor,
+      "#FFFFFF",
+    );
+    this.setThemeVar(
+      "--guidora-panel-text",
+      this.theme?.panelTextColor,
+      "#172033",
+    );
+    this.setThemeVar(
+      "--guidora-highlight-color",
+      this.theme?.highlightColor,
+      "#20A964",
+    );
+    this.setThemeVar(
+      "--guidora-highlight-overlay",
+      this.theme?.highlightOverlayColor,
+      "#2E3A59",
+    );
   }
 
   async start(
@@ -150,6 +184,15 @@ export class TooltipRuntime {
     this.card.append(this.badge, this.title, this.body, footer);
     this.root.append(this.highlight, this.card);
     document.body.append(this.root);
+    this.applyTheme(this.theme);
+  }
+
+  private setThemeVar(
+    name: string,
+    value: string | undefined,
+    fallback: string,
+  ) {
+    this.root?.style.setProperty(name, value || fallback);
   }
 
   private async renderCurrentStep() {

@@ -77,6 +77,16 @@ export interface AssistantQueryOptions {
   locale?: string;
 }
 
+export interface GuidoraAssistantTheme {
+  accentColor?: string;
+  launcherBackgroundColor?: string;
+  launcherTextColor?: string;
+  panelBackgroundColor?: string;
+  panelTextColor?: string;
+  highlightColor?: string;
+  highlightOverlayColor?: string;
+}
+
 export interface GuidoraAssistantConfig {
   agent_id?: number;
   name?: string;
@@ -90,6 +100,7 @@ export interface GuidoraAssistantConfig {
   submitLabel?: string;
   loadingLabel?: string;
   suggestions?: string[];
+  theme?: GuidoraAssistantTheme;
 }
 
 export interface TrackEventOptions {

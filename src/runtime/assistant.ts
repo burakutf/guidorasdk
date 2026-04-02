@@ -1,5 +1,6 @@
 import type {
   GuidoraAssistantConfig,
+  GuidoraAssistantTheme,
   SdkAssistantDraftFlow,
   SdkAssistantResponse,
 } from "../types";
@@ -44,6 +45,7 @@ export class AssistantRuntime {
   private messages: AssistantMessage[] = [];
   private remoteConfig: GuidoraAssistantConfig | null = null;
   private reopenAfterGuidance = false;
+  private theme: GuidoraAssistantTheme | undefined;
 
   constructor(
     config: GuidoraAssistantConfig | undefined,
@@ -156,14 +158,58 @@ export class AssistantRuntime {
     this.headerTitle = title;
     this.headerSubtitle = subtitle;
     this.suggestionsRoot = suggestions;
+    this.applyTheme(this.resolveConfig().theme);
     this.render();
   }
 
+  private applyTheme(theme: GuidoraAssistantTheme | undefined) {
+    if (!this.root) {
+      return;
+    }
+
+    this.setThemeVar("--guidora-accent-color", theme?.accentColor, "#3B6EE8");
+    this.setThemeVar(
+      "--guidora-launcher-bg",
+      theme?.launcherBackgroundColor,
+      "#172033",
+    );
+    this.setThemeVar(
+      "--guidora-launcher-text",
+      theme?.launcherTextColor,
+      "#FFFFFF",
+    );
+    this.setThemeVar(
+      "--guidora-panel-bg",
+      theme?.panelBackgroundColor,
+      "#FFFFFF",
+    );
+    this.setThemeVar("--guidora-panel-text", theme?.panelTextColor, "#172033");
+    this.setThemeVar(
+      "--guidora-highlight-color",
+      theme?.highlightColor,
+      "#20A964",
+    );
+    this.setThemeVar(
+      "--guidora-highlight-overlay",
+      theme?.highlightOverlayColor,
+      "#2E3A59",
+    );
+  }
+
+  private setThemeVar(
+    name: string,
+    value: string | undefined,
+    fallback: string,
+  ) {
+    this.root?.style.setProperty(name, value || fallback);
+  }
   applyAssistantConfig(config: GuidoraAssistantConfig | null) {
     this.remoteConfig = config;
+    this.theme = this.resolveConfig().theme;
     if (this.messages.length === 1 && this.messages[0]?.role === "assistant") {
       this.messages[0].text = this.resolveWelcomeMessage();
     }
+    this.applyTheme(this.theme);
     this.render();
   }
 

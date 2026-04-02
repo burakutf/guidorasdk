@@ -60,6 +60,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
       },
     );
     this.tooltipRuntime = new TooltipRuntime(config.zIndex);
+    this.tooltipRuntime.applyTheme(config.assistant?.theme ?? null);
     this.assistantRuntime =
       config.assistant?.enabled === false
         ? null
@@ -125,6 +126,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
       });
 
       this.assistantRuntime?.applyAssistantConfig(response.assistant);
+      this.tooltipRuntime.applyTheme(response.assistant?.theme ?? null);
 
       if (response.flow && response.progress) {
         await this.startFlow(response.flow, response.progress, {
@@ -175,6 +177,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
       });
 
       this.assistantRuntime?.applyAssistantConfig(response.assistant);
+      this.tooltipRuntime.applyTheme(response.assistant?.theme ?? null);
 
       if (
         response.action === "start_flow" &&
