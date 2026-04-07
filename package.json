@@ -1,20 +1,51 @@
 {
   "name": "@guidora/sdk",
   "version": "0.1.0",
-  "private": true,
+  "description": "Framework-agnostic browser SDK for Guidora onboarding flows and AI-guided product help.",
+  "license": "Apache-2.0",
+  "author": "Guidora",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "unpkg": "./dist/index.global.js",
   "jsdelivr": "./dist/index.global.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/burakutf/guidorasdk.git"
+  },
+  "homepage": "https://github.com/burakutf/guidorasdk#readme",
+  "bugs": {
+    "url": "https://github.com/burakutf/guidorasdk/issues"
+  },
+  "keywords": [
+    "guidora",
+    "sdk",
+    "onboarding",
+    "product-tours",
+    "assistant",
+    "browser-sdk"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "tsup",
     "check": "tsc --noEmit",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "prepublishOnly": "npm run check && npm run build"
   },
   "devDependencies": {
     "tsup": "^8.5.0",

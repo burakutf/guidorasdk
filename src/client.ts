@@ -26,6 +26,7 @@ import {
 } from "./utils";
 
 const BUILDER_QUERY_PARAM = "guidora_builder";
+const PERSISTED_ROUTE_QUERY_PARAMS = ["guidora_api_key", "guidora_v"];
 
 export class GuidoraBrowserClient implements GuidoraClient {
   private readonly config: GuidoraConfig;
@@ -36,6 +37,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
   private readonly assistantRuntime: AssistantRuntime | null;
   private removeNavigationObserver: (() => void) | null = null;
   private lastBootstrapPath = "";
+  private followUpBootstrapTimeout: number | null = null;
   private builderBootstrapPromise: Promise<SdkBuilderBootstrapResponse> | null =
     null;
 
@@ -223,9 +225,35 @@ export class GuidoraBrowserClient implements GuidoraClient {
   destroy() {
     this.removeNavigationObserver?.();
     this.removeNavigationObserver = null;
+    if (this.followUpBootstrapTimeout !== null) {
+      window.clearTimeout(this.followUpBootstrapTimeout);
+      this.followUpBootstrapTimeout = null;
+    }
     this.builderRuntime.destroy();
     this.tooltipRuntime.destroy();
     this.assistantRuntime?.destroy();
+  }
+
+  private scheduleFollowUpBootstrap(flow: SdkFlow) {
+    if (!flow.page_auto_start || !flow.trigger_once_per_visitor) {
+      return;
+    }
+
+    if (this.builderRuntime.isActive()) {
+      return;
+    }
+
+    const path = normalizePath(window.location.pathname);
+    if (this.followUpBootstrapTimeout !== null) {
+      window.clearTimeout(this.followUpBootstrapTimeout);
+    }
+
+    this.followUpBootstrapTimeout = window.setTimeout(() => {
+      this.followUpBootstrapTimeout = null;
+      void this.bootstrap({ path }).catch((error: Error) => {
+        this.handleError(error);
+      });
+    }, 0);
   }
 
   private async maybeStartBuilderMode() {
@@ -316,7 +344,17 @@ export class GuidoraBrowserClient implements GuidoraClient {
       path: targetPath,
     });
     this.tooltipRuntime.hide();
-    window.location.assign(targetPath);
+
+    const currentUrl = new URL(window.location.href);
+    const targetUrl = new URL(targetPath, window.location.origin);
+    for (const queryParam of PERSISTED_ROUTE_QUERY_PARAMS) {
+      const currentValue = currentUrl.searchParams.get(queryParam);
+      if (currentValue) {
+        targetUrl.searchParams.set(queryParam, currentValue);
+      }
+    }
+
+    window.location.assign(targetUrl.toString());
     return true;
   }
 
@@ -396,6 +434,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
           });
           this.config.onFlowComplete?.(flow);
           this.assistantRuntime?.restoreAfterGuidance();
+          this.scheduleFollowUpBootstrap(flow);
         },
         onFlowDismissed: async (_dismissedFlow, activeStep) => {
           await this.safeTrack("flow_dismissed", {
@@ -404,6 +443,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
           });
           this.config.onFlowDismiss?.(flow);
           this.assistantRuntime?.restoreAfterGuidance();
+          this.scheduleFollowUpBootstrap(flow);
         },
         onRouteToStep: (activeFlow, step) =>
           this.routeToStepIfNeeded(activeFlow, step),
