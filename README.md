@@ -84,9 +84,13 @@ This makes it easy to validate the real npm/CDN package on the same demo surface
 1. Ensure the GitHub repository is public.
 2. Create an npm access token with publish rights.
 3. Add `NPM_TOKEN` to the GitHub repository secrets.
-4. Update the version in `package.json`.
-5. Run `npm run check` and `npm run build`.
-6. Publish manually with `npm publish --access public` or via GitHub Actions.
+4. Make sure you actually own the npm package scope used in `package.json`.
+5. If your npm org enforces 2FA for publishing, use a publish token that can bypass 2FA or configure npm trusted publishing for GitHub Actions.
+6. Update the version in `package.json`.
+7. Run `npm run check` and `npm run build`.
+8. Publish manually with `npm publish --access public` or via GitHub Actions.
+
+If you keep the package name as `@guidora/sdk`, npm must know that the publishing account owns or can publish to the `@guidora` scope. If not, npm can return a 404 on publish even though the build itself succeeds.
 
 See [PUBLISHING.md](./PUBLISHING.md) for the exact release flow.
 

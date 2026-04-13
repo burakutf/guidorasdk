@@ -19,7 +19,12 @@ export function normalizeDomain(value?: string) {
   }
 
   const withoutProtocol = raw.replace(/^https?:\/\//, "");
-  return withoutProtocol.split("/")[0] ?? "";
+  const normalized = withoutProtocol.split("/")[0] ?? "";
+  if (normalized.startsWith("127.0.0.1")) {
+    return `localhost${normalized.slice("127.0.0.1".length)}`;
+  }
+
+  return normalized;
 }
 
 export function normalizePath(value?: string) {
@@ -84,6 +89,36 @@ export function generateId() {
 
 export function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function clampChannel(value: number) {
+  return Math.min(255, Math.max(0, Math.round(value)));
+}
+
+export function isHexColor(value: string | undefined | null) {
+  return /^#(?:[0-9a-fA-F]{6})$/.test(String(value ?? "").trim());
+}
+
+export function shiftHexColor(
+  value: string | undefined | null,
+  amount: number,
+) {
+  const normalized = String(value ?? "").trim();
+  if (!isHexColor(normalized)) {
+    return "#4F46E5";
+  }
+
+  const red = Number.parseInt(normalized.slice(1, 3), 16);
+  const green = Number.parseInt(normalized.slice(3, 5), 16);
+  const blue = Number.parseInt(normalized.slice(5, 7), 16);
+
+  const nextRed = clampChannel(red + amount);
+  const nextGreen = clampChannel(green + amount);
+  const nextBlue = clampChannel(blue + amount);
+
+  return `#${nextRed.toString(16).padStart(2, "0")}${nextGreen
+    .toString(16)
+    .padStart(2, "0")}${nextBlue.toString(16).padStart(2, "0")}`.toUpperCase();
 }
 
 export function wait(ms: number) {

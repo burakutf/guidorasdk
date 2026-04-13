@@ -4,6 +4,7 @@ import type {
   SdkAssistantDraftFlow,
   SdkAssistantResponse,
 } from "../types";
+import { shiftHexColor } from "../utils";
 import { injectGuidoraStyles } from "./style";
 
 type AssistantRuntimeDependencies = {
@@ -19,10 +20,25 @@ type AssistantMessage = {
 };
 
 const DEFAULT_SUGGESTIONS = [
-  "Show me how to add a product",
-  "Where do I publish this",
-  "Guide me to the next step",
+  "How do I add a product?",
+  "Where do I publish this?",
+  "Show me the next step",
 ];
+
+const LEGACY_CUSTOM_POSITION = "custom";
+
+function isAnchoredCustomPosition(position: string | null | undefined) {
+  return [
+    "custom-bottom-right",
+    "custom-bottom-left",
+    "custom-top-right",
+    "custom-top-left",
+  ].includes(String(position ?? "").trim());
+}
+
+function hasVisibleAssistantText(value: string | null | undefined) {
+  return Boolean(String(value ?? "").trim());
+}
 
 export class AssistantRuntime {
   private readonly zIndex: number;
@@ -167,32 +183,44 @@ export class AssistantRuntime {
       return;
     }
 
-    this.setThemeVar("--guidora-accent-color", theme?.accentColor, "#3B6EE8");
+    this.setThemeVar("--guidora-accent-color", theme?.accentColor, "#3525CD");
+    this.setThemeVar(
+      "--guidora-accent-strong",
+      shiftHexColor(theme?.accentColor, 24),
+      "#4F46E5",
+    );
     this.setThemeVar(
       "--guidora-launcher-bg",
       theme?.launcherBackgroundColor,
-      "#172033",
+      "#3525CD",
     );
     this.setThemeVar(
       "--guidora-launcher-text",
       theme?.launcherTextColor,
-      "#FFFFFF",
+      "#F8F7FF",
     );
     this.setThemeVar(
       "--guidora-panel-bg",
       theme?.panelBackgroundColor,
-      "#FFFFFF",
+      "#FCF8FF",
     );
-    this.setThemeVar("--guidora-panel-text", theme?.panelTextColor, "#172033");
+    this.setThemeVar("--guidora-panel-text", theme?.panelTextColor, "#1B1B24");
+    this.setThemeVar(
+      "--guidora-muted-text",
+      theme?.panelTextColor && theme?.panelBackgroundColor
+        ? `color-mix(in srgb, ${theme.panelTextColor} 72%, ${theme.panelBackgroundColor} 28%)`
+        : undefined,
+      "#58579B",
+    );
     this.setThemeVar(
       "--guidora-highlight-color",
       theme?.highlightColor,
-      "#20A964",
+      "#4F46E5",
     );
     this.setThemeVar(
       "--guidora-highlight-overlay",
       theme?.highlightOverlayColor,
-      "#2E3A59",
+      "#C7C4D8",
     );
   }
 
@@ -203,6 +231,52 @@ export class AssistantRuntime {
   ) {
     this.root?.style.setProperty(name, value || fallback);
   }
+
+  private renderLauncher(config: GuidoraAssistantConfig) {
+    if (!this.launcher) {
+      return;
+    }
+
+    const label = config.launcherLabel ?? "Ask Guidora";
+    const iconUrl = (config.launcherIconUrl ?? "").trim();
+    const hasLabel = hasVisibleAssistantText(label);
+    const hasIcon = Boolean(iconUrl);
+
+    this.launcher.replaceChildren();
+    this.launcher.classList.toggle(
+      "guidora-sdk-assistant-launcher-textless",
+      !hasLabel,
+    );
+    this.launcher.style.minWidth = !hasLabel && !hasIcon ? "48px" : "";
+    if (config.launcherWidth && Number.isFinite(config.launcherWidth)) {
+      this.launcher.style.width = `${Math.max(40, Math.min(320, Math.round(config.launcherWidth)))}px`;
+    } else {
+      this.launcher.style.removeProperty("width");
+    }
+    this.launcher.setAttribute(
+      "aria-label",
+      label || config.title || "Open AI widget",
+    );
+
+    const content = document.createElement("span");
+    content.className = "guidora-sdk-assistant-launcher-content";
+    if (hasIcon) {
+      const icon = document.createElement("img");
+      icon.className = "guidora-sdk-assistant-launcher-icon";
+      icon.src = iconUrl;
+      icon.alt = "";
+      icon.decoding = "async";
+      content.append(icon);
+    }
+    if (hasLabel) {
+      const text = document.createElement("span");
+      text.className = "guidora-sdk-assistant-launcher-label";
+      text.textContent = label;
+      content.append(text);
+    }
+    this.launcher.append(content);
+  }
+
   applyAssistantConfig(config: GuidoraAssistantConfig | null) {
     this.remoteConfig = config;
     this.theme = this.resolveConfig().theme;
@@ -344,6 +418,10 @@ export class AssistantRuntime {
       this.submitButton.textContent = loading
         ? (this.resolveConfig().loadingLabel ?? "Working...")
         : (this.resolveConfig().submitLabel ?? "Guide me");
+      this.submitButton.classList.toggle(
+        "guidora-sdk-assistant-submit-empty",
+        !hasVisibleAssistantText(this.submitButton.textContent),
+      );
     }
   }
 
@@ -360,9 +438,11 @@ export class AssistantRuntime {
 
     const suppressed =
       this.dependencies.isSuppressed() || !this.hasVisibleConfig();
+    const config = this.resolveConfig();
     this.root.classList.toggle("guidora-sdk-hidden", suppressed);
-    this.launcher.textContent =
-      this.resolveConfig().launcherLabel ?? "Ask Guidora";
+    this.root.dataset.position = config.position?.trim() || "bottom-right";
+    this.applyPosition(config);
+    this.renderLauncher(config);
     this.panel.classList.toggle(
       "guidora-sdk-hidden",
       !this.visible || suppressed,
@@ -372,33 +452,127 @@ export class AssistantRuntime {
       this.visible ? "true" : "false",
     );
     if (this.headerEyebrow) {
-      this.headerEyebrow.textContent =
-        this.resolveConfig().eyebrow ?? "AI guide";
+      this.headerEyebrow.textContent = config.eyebrow ?? "AI guide";
+      this.headerEyebrow.hidden = !hasVisibleAssistantText(
+        this.headerEyebrow.textContent,
+      );
     }
     if (this.headerTitle) {
-      this.headerTitle.textContent =
-        this.resolveConfig().title ?? "Ask for the next action";
+      this.headerTitle.textContent = config.title ?? "Ask for the next action";
+      this.headerTitle.hidden = !hasVisibleAssistantText(
+        this.headerTitle.textContent,
+      );
     }
     if (this.headerSubtitle) {
       this.headerSubtitle.textContent = this.resolveSubtitle();
+      this.headerSubtitle.hidden = !hasVisibleAssistantText(
+        this.headerSubtitle.textContent,
+      );
     }
     if (this.input) {
       this.input.placeholder = this.resolvePlaceholder();
+    }
+    if (this.submitButton) {
+      this.submitButton.classList.toggle(
+        "guidora-sdk-assistant-submit-empty",
+        !hasVisibleAssistantText(this.submitButton.textContent),
+      );
     }
     this.renderSuggestions();
     this.renderTranscript();
   }
 
+  private applyPosition(config: GuidoraAssistantConfig) {
+    if (!this.root) {
+      return;
+    }
+
+    const margin = 20;
+    const position = config.position?.trim() || "bottom-right";
+    const reset = () => {
+      this.root?.style.removeProperty("left");
+      this.root?.style.removeProperty("right");
+      this.root?.style.removeProperty("top");
+      this.root?.style.removeProperty("bottom");
+    };
+
+    const setPosition = (
+      left: string,
+      top: string,
+      right: string,
+      bottom: string,
+    ) => {
+      if (!this.root) {
+        return;
+      }
+
+      this.root.style.left = left;
+      this.root.style.top = top;
+      this.root.style.right = right;
+      this.root.style.bottom = bottom;
+    };
+
+    if (
+      position === LEGACY_CUSTOM_POSITION &&
+      Number.isFinite(config.offsetX) &&
+      Number.isFinite(config.offsetY)
+    ) {
+      setPosition(
+        `${Math.max(0, Math.round(config.offsetX ?? 0))}px`,
+        `${Math.max(0, Math.round(config.offsetY ?? 0))}px`,
+        "auto",
+        "auto",
+      );
+      return;
+    }
+
+    if (isAnchoredCustomPosition(position)) {
+      const offsetX = `${Math.max(0, Math.round(config.offsetX ?? margin))}px`;
+      const offsetY = `${Math.max(0, Math.round(config.offsetY ?? margin))}px`;
+
+      switch (position) {
+        case "custom-bottom-left":
+          setPosition(offsetX, "auto", "auto", offsetY);
+          return;
+        case "custom-top-right":
+          setPosition("auto", offsetY, offsetX, "auto");
+          return;
+        case "custom-top-left":
+          setPosition(offsetX, offsetY, "auto", "auto");
+          return;
+        default:
+          setPosition("auto", "auto", offsetX, offsetY);
+          return;
+      }
+    }
+
+    reset();
+    switch (position) {
+      case "bottom-left":
+        setPosition(`${margin}px`, "auto", "auto", `${margin}px`);
+        return;
+      case "top-right":
+        setPosition("auto", `${margin}px`, `${margin}px`, "auto");
+        return;
+      case "top-left":
+        setPosition(`${margin}px`, `${margin}px`, "auto", "auto");
+        return;
+      default:
+        setPosition("auto", "auto", `${margin}px`, `${margin}px`);
+    }
+  }
+
   private hasVisibleConfig() {
-    if (this.remoteConfig) {
+    const config = this.resolveConfig();
+    if (config.enabled === false) {
+      return false;
+    }
+
+    if (config.enabled === true) {
       return true;
     }
 
-    if (this.localConfig.enabled === true) {
-      return true;
-    }
-
-    return Object.keys(this.localConfig).some((key) => key !== "enabled");
+    return Object.keys(config).some((key) => key !== "enabled");
   }
 
   private resolveConfig() {
@@ -414,7 +588,9 @@ export class AssistantRuntime {
     }
 
     this.suggestionsRoot.replaceChildren();
-    for (const suggestion of this.resolveSuggestions()) {
+    const suggestions = this.resolveSuggestions();
+    this.suggestionsRoot.hidden = suggestions.length === 0;
+    for (const suggestion of suggestions) {
       const chip = document.createElement("button");
       chip.type = "button";
       chip.className = "guidora-sdk-assistant-chip";
@@ -432,27 +608,30 @@ export class AssistantRuntime {
   private resolveWelcomeMessage() {
     const config = this.resolveConfig();
     return (
-      config.welcomeMessage ||
-      "Ask for the next action. I will open a walkthrough or point to the exact control."
+      config.welcomeMessage ??
+      "Ask for the next task. I can open a walkthrough, point to the right control, or suggest a missing guide."
     );
   }
 
   private resolvePlaceholder() {
     const config = this.resolveConfig();
-    return config.placeholder || "How do I complete this task?";
+    return config.placeholder ?? "What are you trying to do?";
   }
 
   private resolveSuggestions() {
     const config = this.resolveConfig();
     const suggestions = config.suggestions ?? DEFAULT_SUGGESTIONS;
-    return suggestions.slice(0, 6);
+    return suggestions
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .slice(0, 6);
   }
 
   private resolveSubtitle() {
     const config = this.resolveConfig();
     return (
-      config.subtitle ||
-      "It starts a flow, highlights the right control, or drafts a missing walkthrough."
+      config.subtitle ??
+      "It starts a flow, highlights the right control, or drafts the next missing walkthrough."
     );
   }
 
@@ -463,6 +642,10 @@ export class AssistantRuntime {
 
     this.transcript.replaceChildren();
     for (const message of this.messages) {
+      if (!hasVisibleAssistantText(message.text) && !message.draftFlow) {
+        continue;
+      }
+
       const bubble = document.createElement("div");
       bubble.className = `guidora-sdk-assistant-message guidora-sdk-assistant-message-${message.role}`;
       if (message.tone) {

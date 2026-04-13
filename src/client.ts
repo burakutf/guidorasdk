@@ -23,10 +23,15 @@ import {
   normalizePath,
   observeNavigation,
   readQueryParam,
+  removeQueryParam,
 } from "./utils";
 
 const BUILDER_QUERY_PARAM = "guidora_builder";
-const PERSISTED_ROUTE_QUERY_PARAMS = ["guidora_api_key", "guidora_v"];
+const PERSISTED_ROUTE_QUERY_PARAMS = [
+  "guidora_v",
+  "guidora_flow",
+  "guidora_sdk_url",
+];
 
 export class GuidoraBrowserClient implements GuidoraClient {
   private readonly config: GuidoraConfig;
@@ -43,6 +48,9 @@ export class GuidoraBrowserClient implements GuidoraClient {
 
   constructor(config: GuidoraConfig) {
     invariantBrowser();
+    if (readQueryParam("guidora_api_key").trim()) {
+      removeQueryParam("guidora_api_key");
+    }
     this.config = config;
     this.storage = new GuidoraStorage(config.storagePrefix);
     this.api = new GuidoraApiClient(config);
@@ -61,6 +69,12 @@ export class GuidoraBrowserClient implements GuidoraClient {
         this.storage.clearBuilderSessionToken();
       },
     );
+    const pendingBuilderSessionToken =
+      readQueryParam(BUILDER_QUERY_PARAM).trim() ||
+      this.storage.getBuilderSessionToken();
+    if (pendingBuilderSessionToken) {
+      this.builderRuntime.prepareShell();
+    }
     this.tooltipRuntime = new TooltipRuntime(config.zIndex);
     this.tooltipRuntime.applyTheme(config.assistant?.theme ?? null);
     this.assistantRuntime =
@@ -71,7 +85,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
             isSuppressed: () => this.builderRuntime.isActive(),
           });
     this.assistantRuntime?.mount();
-    this.assistantRuntime?.setSuppressed(false);
+    this.assistantRuntime?.setSuppressed(Boolean(pendingBuilderSessionToken));
 
     if (config.autoTrackNavigation !== false) {
       this.removeNavigationObserver = observeNavigation(() => {
@@ -174,6 +188,10 @@ export class GuidoraBrowserClient implements GuidoraClient {
       const response = await this.api.assistantQuery(question, {
         ...options,
         path: normalizePath(options.path ?? window.location.pathname),
+        flowSlug:
+          options.flowSlug ||
+          readQueryParam("guidora_flow").trim() ||
+          this.tooltipRuntime.getActiveFlow()?.slug,
         anonymousId: options.anonymousId ?? this.getAnonymousId(),
         sessionKey: options.sessionKey ?? this.getSessionKey(),
       });
@@ -273,6 +291,8 @@ export class GuidoraBrowserClient implements GuidoraClient {
       this.storage.setBuilderSessionToken(querySessionToken);
     }
 
+    this.builderRuntime.prepareShell();
+
     if (!this.builderBootstrapPromise) {
       this.builderBootstrapPromise = this.builderRuntime.start(sessionToken);
     }
@@ -282,6 +302,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
     } catch (error) {
       this.builderBootstrapPromise = null;
       this.storage.clearBuilderSessionToken();
+      this.builderRuntime.destroy();
       this.handleError(error as Error);
       return null;
     }
@@ -379,7 +400,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
       },
       flow: builderSession.flow,
       progress: null,
-      assistant: null,
+      assistant: builderSession.assistant,
       triggered: false,
       started: false,
     };

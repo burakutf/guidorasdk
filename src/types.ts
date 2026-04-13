@@ -70,6 +70,7 @@ export interface ResolveIntentOptions {
 export interface AssistantQueryOptions {
   domain?: string;
   path?: string;
+  flowSlug?: string;
   anonymousId?: string;
   externalId?: string | null;
   traits?: JsonRecord;
@@ -87,11 +88,25 @@ export interface GuidoraAssistantTheme {
   highlightOverlayColor?: string;
 }
 
+export type GuidoraAssistantPosition =
+  | "bottom-right"
+  | "bottom-left"
+  | "top-right"
+  | "top-left"
+  | "custom-bottom-right"
+  | "custom-bottom-left"
+  | "custom-top-right"
+  | "custom-top-left"
+  | "custom"
+  | string;
+
 export interface GuidoraAssistantConfig {
   agent_id?: number;
   name?: string;
   enabled?: boolean;
   launcherLabel?: string;
+  launcherIconUrl?: string;
+  launcherWidth?: number | null;
   title?: string;
   subtitle?: string;
   eyebrow?: string;
@@ -100,6 +115,9 @@ export interface GuidoraAssistantConfig {
   submitLabel?: string;
   loadingLabel?: string;
   suggestions?: string[];
+  position?: GuidoraAssistantPosition;
+  offsetX?: number | null;
+  offsetY?: number | null;
   theme?: GuidoraAssistantTheme;
 }
 
@@ -175,6 +193,11 @@ export interface SdkBootstrapResponse {
   assistant: GuidoraAssistantConfig | null;
   triggered: boolean;
   started: boolean;
+}
+
+export interface SdkTokenResponse {
+  sdk_token: string;
+  expires_in: number;
 }
 
 export interface SdkEventResponse {
@@ -254,6 +277,7 @@ export interface SdkBuilderBootstrapResponse {
   session: SdkBuilderSession;
   flow: SdkFlow;
   next_step_order: number;
+  assistant: GuidoraAssistantConfig | null;
 }
 
 export interface SdkBuilderHeartbeatResponse {
@@ -302,6 +326,10 @@ export interface SdkBuilderFlowMutationResponse {
   flows: SdkFlow[];
   active_flow_id: number;
   next_step_order: number;
+}
+
+export interface SdkBuilderAssistantUpdateResponse {
+  assistant: GuidoraAssistantConfig | null;
 }
 
 export interface SdkBuilderCloseResponse {

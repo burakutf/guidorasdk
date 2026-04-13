@@ -1,5 +1,11 @@
 import type { GuidoraAssistantTheme, SdkFlow, SdkFlowStep } from "../types";
-import { clamp, ensureElementInViewport, normalizePath, wait } from "../utils";
+import {
+  clamp,
+  ensureElementInViewport,
+  normalizePath,
+  shiftHexColor,
+  wait,
+} from "../utils";
 import { injectGuidoraStyles } from "./style";
 
 type TooltipRuntimeHandlers = {
@@ -47,27 +53,32 @@ export class TooltipRuntime {
     this.setThemeVar(
       "--guidora-accent-color",
       this.theme?.accentColor,
-      "#3B6EE8",
+      "#3525CD",
+    );
+    this.setThemeVar(
+      "--guidora-accent-strong",
+      shiftHexColor(this.theme?.accentColor, 24),
+      "#4F46E5",
     );
     this.setThemeVar(
       "--guidora-panel-bg",
       this.theme?.panelBackgroundColor,
-      "#FFFFFF",
+      "#3525CD",
     );
     this.setThemeVar(
       "--guidora-panel-text",
       this.theme?.panelTextColor,
-      "#172033",
+      "#F8F7FF",
     );
     this.setThemeVar(
       "--guidora-highlight-color",
       this.theme?.highlightColor,
-      "#20A964",
+      "#4F46E5",
     );
     this.setThemeVar(
       "--guidora-highlight-overlay",
       this.theme?.highlightOverlayColor,
-      "#2E3A59",
+      "#C7C4D8",
     );
   }
 
@@ -116,6 +127,10 @@ export class TooltipRuntime {
     }
   }
 
+  getActiveFlow() {
+    return this.activeSession?.flow ?? null;
+  }
+
   destroy() {
     this.hide();
     this.root?.remove();
@@ -146,7 +161,7 @@ export class TooltipRuntime {
 
     this.badge = document.createElement("div");
     this.badge.className = "guidora-sdk-badge";
-    this.badge.textContent = "Guidora walkthrough";
+    this.badge.textContent = "Guidora flow";
 
     this.title = document.createElement("h3");
     this.title.className = "guidora-sdk-title";
@@ -310,6 +325,7 @@ export class TooltipRuntime {
     const cardHeight = this.card.offsetHeight || 220;
 
     if (!target || position === "center") {
+      this.card.dataset.position = "center";
       this.card.style.top = `calc(50% - ${Math.round(cardHeight / 2)}px)`;
       this.card.style.left = `calc(50% - ${Math.round(cardWidth / 2)}px)`;
       return;
@@ -340,6 +356,7 @@ export class TooltipRuntime {
       window.innerWidth - cardWidth - viewportPadding,
     );
 
+    this.card.dataset.position = position;
     this.card.style.top = `${top}px`;
     this.card.style.left = `${left}px`;
   }
