@@ -38,6 +38,26 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Resolve publish version from ref
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${GITHUB_REF_NAME}"
+          fi
+
+          VERSION="${VERSION#v}"
+
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$'; then
+            echo "Invalid publish version: $VERSION"
+            exit 1
+          fi
+
+          echo "SDK_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Sync package version
+        run: npm version "$SDK_VERSION" --no-git-tag-version
+
       - name: Install dependencies
         run: npm ci
 
