@@ -406,7 +406,7 @@ export class AssistantRuntime {
       return `Suggested draft: ${response.draft_flow.name}.`;
     }
     if (response.action === "limit_reached") {
-      return "Assistant quota reached.";
+      return "Hosted AI trial reached. Add your own OpenAI key in Guidora dashboard.";
     }
     return response.message;
   }

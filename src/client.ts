@@ -45,6 +45,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
   private followUpBootstrapTimeout: number | null = null;
   private builderBootstrapPromise: Promise<SdkBuilderBootstrapResponse> | null =
     null;
+  private readonly assistantQueryCache = new Map<string, SdkAssistantResponse>();
 
   constructor(config: GuidoraConfig) {
     invariantBrowser();
@@ -185,16 +186,40 @@ export class GuidoraBrowserClient implements GuidoraClient {
 
   async askAssistant(question: string, options: AssistantQueryOptions = {}) {
     try {
+      const path = normalizePath(options.path ?? window.location.pathname);
+      const flowSlug =
+        options.flowSlug ||
+        readQueryParam("guidora_flow").trim() ||
+        this.tooltipRuntime.getActiveFlow()?.slug ||
+        "";
+      const cacheKey = this.buildAssistantCacheKey(question, {
+        ...options,
+        path,
+        flowSlug,
+      });
+      const cachedResponse = this.assistantQueryCache.get(cacheKey);
+      if (cachedResponse) {
+        this.assistantRuntime?.applyAssistantConfig(cachedResponse.assistant);
+        this.tooltipRuntime.applyTheme(cachedResponse.assistant?.theme ?? null);
+        return cachedResponse;
+      }
+
       const response = await this.api.assistantQuery(question, {
         ...options,
-        path: normalizePath(options.path ?? window.location.pathname),
-        flowSlug:
-          options.flowSlug ||
-          readQueryParam("guidora_flow").trim() ||
-          this.tooltipRuntime.getActiveFlow()?.slug,
+        path,
+        flowSlug,
         anonymousId: options.anonymousId ?? this.getAnonymousId(),
         sessionKey: options.sessionKey ?? this.getSessionKey(),
       });
+
+      if (
+        response.action === "suggest_flow" ||
+        response.action === "limit_reached"
+      ) {
+        this.assistantQueryCache.set(cacheKey, response);
+      } else {
+        this.assistantQueryCache.delete(cacheKey);
+      }
 
       this.assistantRuntime?.applyAssistantConfig(response.assistant);
       this.tooltipRuntime.applyTheme(response.assistant?.theme ?? null);
@@ -224,6 +249,19 @@ export class GuidoraBrowserClient implements GuidoraClient {
       this.handleError(error as Error);
       throw error;
     }
+  }
+
+  private buildAssistantCacheKey(
+    question: string,
+    options: Pick<AssistantQueryOptions, "domain" | "path" | "flowSlug" | "locale">,
+  ) {
+    return [
+      (options.domain ?? this.config.domain ?? window.location.host).trim().toLowerCase(),
+      normalizePath(options.path ?? window.location.pathname),
+      (options.flowSlug ?? "").trim().toLowerCase(),
+      (options.locale ?? this.config.locale ?? "tr").trim().toLowerCase(),
+      question.trim().toLowerCase(),
+    ].join("::");
   }
 
   async track(eventType: GuideEventType, options: TrackEventOptions = {}) {
@@ -304,7 +342,7 @@ export class GuidoraBrowserClient implements GuidoraClient {
       this.storage.clearBuilderSessionToken();
       this.builderRuntime.destroy();
       this.handleError(error as Error);
-      return null;
+      throw error;
     }
   }
 
