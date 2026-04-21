@@ -45,7 +45,10 @@ export class GuidoraBrowserClient implements GuidoraClient {
   private followUpBootstrapTimeout: number | null = null;
   private builderBootstrapPromise: Promise<SdkBuilderBootstrapResponse> | null =
     null;
-  private readonly assistantQueryCache = new Map<string, SdkAssistantResponse>();
+  private readonly assistantQueryCache = new Map<
+    string,
+    SdkAssistantResponse
+  >();
 
   constructor(config: GuidoraConfig) {
     invariantBrowser();
@@ -253,10 +256,15 @@ export class GuidoraBrowserClient implements GuidoraClient {
 
   private buildAssistantCacheKey(
     question: string,
-    options: Pick<AssistantQueryOptions, "domain" | "path" | "flowSlug" | "locale">,
+    options: Pick<
+      AssistantQueryOptions,
+      "domain" | "path" | "flowSlug" | "locale"
+    >,
   ) {
     return [
-      (options.domain ?? this.config.domain ?? window.location.host).trim().toLowerCase(),
+      (options.domain ?? this.config.domain ?? window.location.host)
+        .trim()
+        .toLowerCase(),
       normalizePath(options.path ?? window.location.pathname),
       (options.flowSlug ?? "").trim().toLowerCase(),
       (options.locale ?? this.config.locale ?? "tr").trim().toLowerCase(),
